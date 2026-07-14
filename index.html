@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🏫 클래스룸 툴즈 - 학급 도구 모음</title>
+    <title>🏫 클래스룸 툴즈 - 학급 도구 모음 Pro</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts 연동 (요청 서체만 고도로 슬림화 구성) -->
@@ -45,13 +45,11 @@
 
         /* 팝업 애니메이션 */
         @keyframes popIn {
-            0% { transform: scale(0.3); opacity: 0; }
-            50% { transform: scale(1.1); }
-            70% { transform: scale(0.9); }
+            0% { transform: scale(0.92); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
         }
         .animate-pop-in {
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         /* 스피너 회전 */
@@ -98,25 +96,81 @@
             padding-top: 10px !important;
             background-position-y: 8px !important;
         }
+
+        /* 툴바 한줄 정렬용 스크롤바 숨기기 유틸 */
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-zinc-950 font-sans text-zinc-100 min-h-screen flex flex-col antialiased">
 
-    <!-- 로딩 스크릴 -->
+    <!-- 로딩 스크린 -->
     <div id="loading-screen" class="fixed inset-0 bg-zinc-950 z-50 flex flex-col items-center justify-center transition-all duration-500 select-none">
         <div class="relative flex items-center justify-center">
-            <div class="w-16 h-16 border-4 border-yellow-900 border-t-yellow-500 rounded-full animate-spin-custom"></div>
+            <div class="w-16 h-16 border-4 border-zinc-800 border-t-blue-500 rounded-full animate-spin-custom"></div>
             <span class="absolute text-2xl">🏫</span>
         </div>
-        <p class="mt-4 text-zinc-400 font-semibold text-lg">스마트 에듀 패키지를 활성화하고 있습니다...</p>
+        <p class="mt-4 text-zinc-400 font-semibold text-lg">스마트 에듀 패키지를 준비하고 있습니다...</p>
     </div>
 
     <!-- 커스텀 토스트 알림 컨테이너 -->
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none select-none"></div>
 
+    <!-- 스마트 커스텀 확인 모달 다이얼로그 (alert/confirm 대체제) -->
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 select-none">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-sm w-full p-6 space-y-5 shadow-2xl animate-pop-in">
+            <div class="flex items-center gap-3 text-amber-400">
+                <span class="text-3xl" id="confirm-modal-icon">⚠️</span>
+                <h3 class="text-lg font-black text-zinc-100" id="confirm-modal-title">확인이 필요한 작업</h3>
+            </div>
+            <p class="text-sm text-zinc-300 leading-relaxed" id="confirm-modal-msg">이 작업을 계속 진행하시겠습니까? 돌이킬 수 없을 수 있습니다.</p>
+            <div class="flex gap-2.5 pt-2">
+                <button id="confirm-cancel-btn" class="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-extrabold rounded-xl text-xs transition-all">취소</button>
+                <button id="confirm-ok-btn" class="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-xl text-xs transition-all">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 통합 백업 및 데이터 관리 모달 -->
+    <div id="backup-modal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 select-none">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-md w-full p-6 space-y-6 shadow-2xl animate-pop-in">
+            <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+                <h3 class="text-lg font-black text-blue-400 flex items-center gap-2">
+                    <span>💾</span> 백업 및 외부 데이터 가져오기
+                </h3>
+                <button onclick="toggleBackupModal(false)" class="text-zinc-500 hover:text-zinc-300 text-lg">✕</button>
+            </div>
+            <div class="space-y-4">
+                <p class="text-xs text-zinc-400 leading-relaxed">
+                    작성된 메모장, 역대 알림장, 그리고 등록해둔 학생 명단 전체를 단일 파일로 내려받아 백업하거나, 다른 컴퓨터 브라우저에서 복원하실 수 있습니다.
+                </p>
+                
+                <div class="p-4 bg-zinc-950 rounded-2xl border border-zinc-800 space-y-3">
+                    <h4 class="text-xs font-bold text-zinc-300">내보내기 (Backup)</h4>
+                    <button onclick="exportAllData()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-lg">
+                        <span>📥</span> .json 백업 파일 다운로드
+                    </button>
+                </div>
+
+                <div class="p-4 bg-zinc-950 rounded-2xl border border-zinc-800 space-y-3">
+                    <h4 class="text-xs font-bold text-zinc-300">가져오기 및 복원 (Restore)</h4>
+                    <input type="file" id="backup-file-input" accept=".json" class="hidden" onchange="importAllData(event)">
+                    <button onclick="triggerImportSelection()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-lg">
+                        <span>📤</span> 백업 파일 불러와 복구
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 헤더 영역 -->
     <header class="bg-zinc-900 shadow-lg border-b border-zinc-800 sticky top-0 z-40 select-none">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="w-full mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between py-4 gap-4">
                 <!-- 로고 -->
                 <div class="flex items-center gap-3">
@@ -124,7 +178,7 @@
                     <h1 class="text-2xl font-black text-blue-400 tracking-tight">edutools</h1>
                 </div>
                 <!-- 탭 네비게이션 -->
-                <nav class="flex flex-wrap gap-2">
+                <nav class="flex flex-wrap gap-2 items-center">
                     <button onclick="switchTab('tab-notepad')" id="nav-notepad" class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 bg-blue-950/60 text-blue-400 shadow-sm border border-blue-900/40">
                         <span>📝</span> 메모장
                     </button>
@@ -143,7 +197,7 @@
     </header>
 
     <!-- 메인 컨텐츠 영역 -->
-    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <main class="flex-grow w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         <!-- [1] 메모장 탭 -->
         <section id="tab-notepad" class="tab-content block">
@@ -165,10 +219,10 @@
                 </div>
 
                 <!-- 우측 에디터 영역 -->
-                <div class="flex-grow flex flex-col h-full bg-zinc-900 relative">
+                <div class="flex-grow flex flex-col h-full bg-zinc-900 relative min-w-0">
                     
-                    <!-- 상단 통합 제어 & 서식 툴바 -->
-                    <div class="p-3 bg-zinc-950 border-b border-zinc-800 flex flex-wrap items-center gap-2.5 select-none relative z-30">
+                    <!-- 상단 통합 제어 & 서식 툴바 (한줄 정렬) -->
+                    <div class="p-2 bg-zinc-950 border-b border-zinc-800 flex flex-nowrap items-center gap-2.5 select-none relative z-30 overflow-x-auto hide-scrollbar whitespace-nowrap">
                         
                         <!-- [목록 접기/펼치기] 툴바 고정 버튼 -->
                         <button onclick="toggleSidebarNotepad()" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 rounded-lg text-xs font-bold flex items-center gap-1 transition-all shrink-0">
@@ -262,13 +316,16 @@
                         <div class="h-6 w-px bg-zinc-800 mx-0.5"></div>
 
                         <!-- 화이트보드 인터랙티브 기능군 -->
-                        <div class="flex items-center gap-1 bg-zinc-900 px-2 py-1 rounded-xl border border-zinc-800">
+                        <div class="flex items-center gap-1 bg-zinc-900 px-2 py-1 rounded-xl border border-zinc-800 shrink-0">
                             <span class="text-[10px] text-zinc-500 font-bold mr-1">모드</span>
                             <button onclick="setNotepadTool('text')" id="tool-text" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white" title="에디터 글쓰기 모드">
                                 가 (텍스트)
                             </button>
                             <button onclick="setNotepadTool('pen')" id="tool-pen" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-zinc-400 hover:bg-zinc-800" title="자유 연필 드로잉">
                                 ✏️ 펜
+                            </button>
+                            <button onclick="setNotepadTool('highlighter')" id="tool-highlighter" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-zinc-400 hover:bg-zinc-800" title="텍스트 형광펜 강조">
+                                🖊️ 형광펜
                             </button>
                             <button onclick="toggleShapePanel()" id="tool-shape" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-zinc-400 hover:bg-zinc-800 flex items-center gap-1" title="정밀 벡터 기하 도형">
                                 📐 도형 ▾
@@ -285,8 +342,13 @@
                             <input type="file" id="note-img-uploader" accept="image/*" class="hidden" onchange="loadWebImage(event)">
                         </div>
 
+                        <!-- 프린트 및 다운로드 컨트롤러 -->
+                        <div class="flex items-center gap-1">
+                            <button onclick="printCurrentDocument()" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold" title="현재 메모 인쇄 / PDF 저장">🖨️ 인쇄/PDF</button>
+                        </div>
+
                         <!-- 드로잉 편집 컨트롤러 (Undo / Redo / Clear) -->
-                        <div class="flex items-center gap-1.5 ml-auto">
+                        <div class="flex items-center gap-1.5 ml-auto shrink-0 pr-2">
                             <button onclick="undoNotepadDrawing()" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold" title="되돌리기">↩️</button>
                             <button onclick="redoNotepadDrawing()" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold" title="다시실행">↪️</button>
                             <button onclick="clearNotepadAllCanvas()" class="p-1.5 bg-rose-950 hover:bg-rose-900 border border-rose-900 text-rose-300 rounded-lg text-xs font-bold" title="모든 그림 및 판서 일괄 청소">🧹 전체 지우기</button>
@@ -408,10 +470,10 @@
                 </div>
 
                 <!-- 우측 에디터 영역 -->
-                <div class="flex-grow flex flex-col h-full bg-zinc-900 relative">
+                <div class="flex-grow flex flex-col h-full bg-zinc-900 relative min-w-0">
                     
-                    <!-- 상단 통합 제어 & 서식 툴바 -->
-                    <div class="p-3 bg-zinc-950 border-b border-zinc-800 flex flex-wrap items-center gap-2.5 select-none relative z-30">
+                    <!-- 상단 통합 제어 & 서식 툴바 (한줄 정렬) -->
+                    <div class="p-2 bg-zinc-950 border-b border-zinc-800 flex flex-nowrap items-center gap-2.5 select-none relative z-30 overflow-x-auto hide-scrollbar whitespace-nowrap">
                         
                         <!-- [목록 접기/펼치기] 툴바 고정 버튼 -->
                         <button onclick="toggleSidebarNotice()" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 rounded-lg text-xs font-bold flex items-center gap-1 transition-all shrink-0">
@@ -451,7 +513,7 @@
                                 <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomSize('65', 'notice-size-dropdown-menu')" class="w-full text-left px-4 py-1.5 text-xs hover:bg-indigo-600 hover:text-white text-zinc-200 transition-colors">65px</button>
                                 <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomSize('70', 'notice-size-dropdown-menu')" class="w-full text-left px-4 py-1.5 text-xs hover:bg-indigo-600 hover:text-white text-zinc-200 transition-colors">70px</button>
                                 <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomSize('75', 'notice-size-dropdown-menu')" class="w-full text-left px-4 py-1.5 text-xs hover:bg-indigo-600 hover:text-white text-zinc-200 transition-colors">75px</button>
-                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomSize('80', 'size-dropdown-menu')" class="w-full text-left px-4 py-1.5 text-xs hover:bg-indigo-600 hover:text-white text-zinc-200 transition-colors">80px</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomSize('80', 'notice-size-dropdown-menu')" class="w-full text-left px-4 py-1.5 text-xs hover:bg-indigo-600 hover:text-white text-zinc-200 transition-colors">80px</button>
                             </div>
                         </div>
 
@@ -464,7 +526,7 @@
                         <div class="h-6 w-px bg-zinc-800 mx-0.5"></div>
 
                         <!-- 텍스트 색상 -->
-                        <div class="flex items-center gap-1">
+                        <div class="flex items-center gap-1 shrink-0 pr-2">
                             <span class="text-[10px] text-zinc-400 font-bold mr-1">T</span>
                             <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#FFFFFF')" class="w-4 h-4 rounded-full bg-white border border-zinc-600" title="화이트"></button>
                             <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#FFBE98')" class="w-4 h-4 rounded-full bg-[#FFBE98] border border-zinc-600" title="피치퍼즈"></button>
@@ -473,6 +535,11 @@
                             <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#8B5CF6')" class="w-4 h-4 rounded-full bg-purple-500 border border-zinc-600" title="배리페리"></button>
                             <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#3B82F6')" class="w-4 h-4 rounded-full bg-blue-500 border border-zinc-600" title="클래식 블루"></button>
                         </div>
+                        
+                        <div class="h-6 w-px bg-zinc-800 mx-0.5"></div>
+
+                        <!-- 프린트 및 다운로드 컨트롤러 -->
+                        <button onclick="printCurrentDocument()" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold" title="현재 알림장 인쇄 / PDF 저장">🖨️ 알림장 출력</button>
                     </div>
 
                     <!-- 오늘 날짜 및 헤더 -->
@@ -502,20 +569,19 @@
 
         <!-- [3] 타이머 탭 -->
         <section id="tab-timer" class="tab-content hidden select-none">
-            <div class="max-w-3xl mx-auto bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden">
+            <div class="w-full flex flex-col h-[800px] bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden">
                 <!-- 설정 화면 -->
-                <div id="timer-setup-view" class="p-8 space-y-6">
+                <div id="timer-setup-view" class="p-8 space-y-6 m-auto">
                     <div class="text-center">
                         <span class="text-4xl">⏱️</span>
-                        <h2 class="text-2xl font-bold text-zinc-100 mt-2">학급 집중 타이머</h2>
-                        <p class="text-sm text-zinc-400 mt-1">시간을 설정한 후 타이머를 시작하세요.</p>
+                        <h2 class="text-2xl font-bold text-zinc-100 mt-2">타이머</h2>
                     </div>
 
                     <!-- 입력 패널 -->
                     <div class="flex justify-center items-center gap-4 py-6">
                         <div class="flex flex-col items-center">
                             <label class="text-xs text-zinc-400 font-bold uppercase mb-2">분 (MIN)</label>
-                            <input id="timer-min" type="number" min="0" max="99" value="5" class="w-24 h-24 text-4xl text-center font-bold bg-zinc-950 border-2 border-zinc-800 focus:border-blue-500 focus:bg-zinc-900 text-zinc-100 rounded-2xl focus:outline-none transition-all">
+                            <input id="timer-min" type="number" min="0" max="99" value="0" class="w-24 h-24 text-4xl text-center font-bold bg-zinc-950 border-2 border-zinc-800 focus:border-blue-500 focus:bg-zinc-900 text-zinc-100 rounded-2xl focus:outline-none transition-all">
                         </div>
                         <span class="text-4xl text-zinc-700 font-bold mt-6">:</span>
                         <div class="flex flex-col items-center">
@@ -524,8 +590,27 @@
                         </div>
                     </div>
 
+                    <!-- 사운드 셀렉터 구현 -->
+                    <div class="bg-zinc-950 p-4 rounded-2xl border border-zinc-800 max-w-sm mx-auto space-y-2">
+                        <p class="text-xs font-black text-zinc-400 text-center uppercase tracking-wider">🔔 종료 알림음 맞춤 설정</p>
+                        <div class="grid grid-cols-3 gap-1.5 text-xs text-center font-bold">
+                            <label class="cursor-pointer bg-zinc-900 hover:bg-zinc-850 p-2.5 rounded-xl border border-zinc-800 flex flex-col items-center gap-1.5">
+                                <input type="radio" name="alarm-sound-mode" value="alarm" checked class="text-blue-500">
+                                🚨 사이렌
+                            </label>
+                            <label class="cursor-pointer bg-zinc-900 hover:bg-zinc-850 p-2.5 rounded-xl border border-zinc-800 flex flex-col items-center gap-1.5">
+                                <input type="radio" name="alarm-sound-mode" value="bell" class="text-blue-500">
+                                🔔 골든벨
+                            </label>
+                            <label class="cursor-pointer bg-zinc-900 hover:bg-zinc-850 p-2.5 rounded-xl border border-zinc-800 flex flex-col items-center gap-1.5">
+                                <input type="radio" name="alarm-sound-mode" value="chime" class="text-blue-500">
+                                ✨ 차임벨
+                            </label>
+                        </div>
+                    </div>
+
                     <!-- 퀵 프리셋 버튼 -->
-                    <div class="space-y-2">
+                    <div class="space-y-3">
                         <p class="text-xs font-semibold text-zinc-400 text-center">⏱️ 간편 시간 추가</p>
                         <div class="flex flex-wrap justify-center gap-2">
                             <button onclick="addTimerPreset(30)" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-200 font-semibold rounded-xl text-sm transition-all">+30초</button>
@@ -533,6 +618,9 @@
                             <button onclick="addTimerPreset(180)" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-200 font-semibold rounded-xl text-sm transition-all">+3분</button>
                             <button onclick="addTimerPreset(300)" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-200 font-semibold rounded-xl text-sm transition-all">+5분</button>
                             <button onclick="addTimerPreset(600)" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-600 text-zinc-200 font-semibold rounded-xl text-sm transition-all">+10분</button>
+                        </div>
+                        <div class="flex justify-center mt-3">
+                            <button onclick="resetTimerFields()" class="px-5 py-2 bg-zinc-800/50 hover:bg-zinc-700 text-zinc-400 font-bold rounded-xl text-xs transition-all border border-zinc-700/50">🔄 시간 초기화</button>
                         </div>
                     </div>
 
@@ -545,9 +633,9 @@
                 </div>
 
                 <!-- 작동 대형 시계 화면 -->
-                <div id="timer-running-view" class="hidden p-10 space-y-8 bg-zinc-950 text-white relative">
+                <div id="timer-running-view" class="hidden h-full flex-col p-10 space-y-8 bg-zinc-950 text-white relative">
                     <!-- 현재 목표 타임 정보 탑바 -->
-                    <div class="flex justify-between items-center border-b border-zinc-800 pb-4">
+                    <div class="flex justify-between items-center border-b border-zinc-800 pb-4 shrink-0">
                         <span class="text-sm font-semibold text-zinc-400">학급 타이머 작동 중</span>
                         <div class="flex items-center gap-2">
                             <span class="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></span>
@@ -556,14 +644,14 @@
                     </div>
 
                     <!-- 초거대 타이머 폰트 디스플레이 -->
-                    <div class="flex justify-center items-center py-10 select-none">
-                        <div id="timer-big-display" class="text-8xl sm:text-[120px] font-extrabold tracking-tight tabular-nums transition-colors duration-300 text-blue-400 select-none">
+                    <div class="flex-grow flex justify-center items-center py-10 select-none">
+                        <div id="timer-big-display" class="text-[150px] sm:text-[250px] font-extrabold tracking-tight tabular-nums transition-colors duration-300 text-blue-400 select-none leading-none">
                             05:00
                         </div>
                     </div>
 
                     <!-- Progress Bar 및 백분율 -->
-                    <div class="space-y-2">
+                    <div class="space-y-2 shrink-0">
                         <div class="flex justify-between text-xs text-zinc-400 font-bold">
                             <span id="timer-percent-text">남은 시간: 100%</span>
                             <span id="timer-remaining-fraction">300초 / 300초</span>
@@ -574,17 +662,17 @@
                     </div>
 
                     <!-- 컨트롤 버튼 셋 -->
-                    <div class="grid grid-cols-3 gap-4 pt-4">
+                    <div class="grid grid-cols-3 gap-4 pt-4 mt-auto shrink-0 max-w-2xl mx-auto w-full">
                         <!-- 중지 / 계속 -->
-                        <button id="btn-timer-toggle" onclick="toggleTimerPause()" class="py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-md transition-all flex items-center justify-center gap-2">
+                        <button id="btn-timer-toggle" onclick="toggleTimerPause()" class="py-3 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 font-medium rounded-xl border border-zinc-800 transition-all flex items-center justify-center gap-2 text-sm">
                             <span id="btn-timer-toggle-icon">⏸</span> <span id="btn-timer-toggle-text">일시정지</span>
                         </button>
                         <!-- 30초 추가 보너스 -->
-                        <button onclick="addBonusTime(30)" class="py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold rounded-2xl shadow-md transition-all flex items-center justify-center gap-1">
+                        <button onclick="addBonusTime(30)" class="py-3 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 font-medium rounded-xl border border-zinc-800 transition-all flex items-center justify-center gap-1 text-sm">
                             <span>+30s</span> 보너스
                         </button>
                         <!-- 초기화 -->
-                        <button onclick="resetTimer()" class="py-4 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-2xl shadow-md transition-all flex items-center justify-center gap-2">
+                        <button onclick="resetTimer()" class="py-3 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-500 hover:text-rose-400 font-medium rounded-xl border border-zinc-800 transition-all flex items-center justify-center gap-2 text-sm">
                             <span>🔄</span> 초기화
                         </button>
                     </div>
@@ -806,7 +894,7 @@
                                     <span>📋</span> 학생 명단 설정 및 등록
                                 </h3>
                             </div>
-                            <button onclick="resetToSampleStudents()" class="text-xs text-blue-400 bg-blue-950/40 hover:bg-blue-900/40 px-3 py-2 rounded-lg font-bold border border-blue-900/40 transition-all">
+                            <button onclick="resetToSampleStudentsWithConfirm()" class="text-xs text-blue-400 bg-blue-950/40 hover:bg-blue-900/40 px-3 py-2 rounded-lg font-bold border border-blue-900/40 transition-all">
                                 샘플 데이터(10명) 복원
                             </button>
                         </div>
@@ -856,7 +944,7 @@
                             <div class="lg:col-span-7 bg-zinc-950 p-5 rounded-2xl border border-zinc-800 flex flex-col">
                                 <div class="flex justify-between items-center mb-3 select-none">
                                     <h4 class="text-xs font-bold text-zinc-400 uppercase tracking-wider">현재 저장된 명단 목록</h4>
-                                    <button onclick="clearAllStudents()" class="text-xs text-rose-400 font-bold hover:underline">모든 명단 비우기</button>
+                                    <button onclick="clearAllStudentsWithConfirm()" class="text-xs text-rose-400 font-bold hover:underline">모든 명단 비우기</button>
                                 </div>
                                 <div id="student-manage-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[350px] overflow-y-auto pr-1">
                                     <!-- 동적 로드 -->
@@ -875,7 +963,7 @@
 
     <!-- 하단 푸터 -->
     <footer class="bg-zinc-900 border-t border-zinc-800 py-6 mt-12 select-none">
-        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-zinc-500 space-y-1">
+        <div class="w-full mx-auto px-4 text-center text-xs text-zinc-500 space-y-1">
             <p>© 2026 edutools. All rights reserved.</p>
             <p>본 학급 지원도구는 로컬 브라우저 영구 기억 장치(LocalStorage)를 사용하여 작성된 내용과 학생 명단을 보존합니다.</p>
         </div>
@@ -964,10 +1052,10 @@
          *************************************************************/
         let canvas = null;
         let ctx = null;
-        let currentTool = 'text'; // 'text', 'pen', 'shape', 'eraser', 'select'
+        let currentTool = 'text'; // 'text', 'pen', 'highlighter', 'shape', 'eraser', 'select'
         let isDrawing = false;
         let isResizing = false; // 크기 조정 모드 구분 플래그
-        const RESIZE_HANDLE_SIZE = 14; // 조절 상자 앵커 크기 확대
+        const RESIZE_HANDLE_SIZE = 14; 
         
         // 정밀 도형 기본 상태
         let shapeConfig = {
@@ -1037,7 +1125,6 @@
             if (!canvas) return;
             const scroller = document.getElementById('editor-scroller');
             if (scroller) {
-                // 스크롤 내부 가용 최대 공간만큼 캔버스를 무한 확장
                 canvas.width = scroller.clientWidth;
                 canvas.height = Math.max(scroller.scrollHeight, 600);
                 redrawAllCanvas();
@@ -1055,7 +1142,7 @@
             }
 
             // 모든 툴 버튼 원복 후 활성 클래스 부여
-            const toolButtons = ['tool-text', 'tool-pen', 'tool-shape', 'tool-eraser', 'tool-select'];
+            const toolButtons = ['tool-text', 'tool-pen', 'tool-highlighter', 'tool-shape', 'tool-eraser', 'tool-select'];
             toolButtons.forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) {
@@ -1102,11 +1189,9 @@
 
         function setShapeType(type) {
             shapeConfig.type = type;
-            // 모든 도형 옵션 버튼 스타일 원복
             document.querySelectorAll('.shape-type-btn').forEach(btn => {
                 btn.className = "shape-type-btn py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-[11px] font-bold transition-all";
             });
-            // 선택된 타깃 버튼 하이라이트화
             const targetBtn = document.getElementById('shape-opt-' + type);
             if (targetBtn) {
                 targetBtn.className = "shape-type-btn py-2 bg-blue-600 text-white rounded-lg text-[11px] font-bold transition-all";
@@ -1130,7 +1215,6 @@
                 }
                 editor.classList.add('lined-light-bg');
                 
-                // 설정된 사용자 맞춤형 폰트 크기에 따라 줄 간격 동적 연계 적용
                 let activeSize = parseInt(editor.style.fontSize) || 36;
                 const computedLineHeight = Math.round(activeSize * 1.6);
                 editor.style.backgroundSize = `100% ${computedLineHeight}px`;
@@ -1148,7 +1232,6 @@
                     titleInput.classList.add('border-zinc-800');
                 }
                 editor.classList.remove('lined-light-bg');
-                // 기존 인라인 백그라운드 사이즈 해제 및 줄간격 정위치 조정
                 editor.style.backgroundSize = '';
                 if (!editor.style.fontSize) {
                     editor.style.lineHeight = '';
@@ -1177,7 +1260,7 @@
         }
 
         function applyLineHeightAndLines(editor, value) {
-            let activeSize = 36; // 기준 기본값
+            let activeSize = 36; 
             if (editor.style.fontSize) {
                 activeSize = parseInt(editor.style.fontSize) || 36;
             }
@@ -1242,7 +1325,7 @@
                     }
 
                     isResizing = false;
-                    if (selectedElement.type === 'pen') {
+                    if (selectedElement.type === 'pen' || selectedElement.type === 'highlighter') {
                         selectedElement.originalPoints = JSON.parse(JSON.stringify(selectedElement.points));
                     } else {
                         originalShapeX = selectedElement.startX || selectedElement.x || 0;
@@ -1287,6 +1370,17 @@
                     points: [pos]
                 };
                 drawingShapes.push(newShape);
+            } else if (currentTool === 'highlighter') {
+                saveDrawingState();
+                const newShape = {
+                    id: 'draw-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+                    type: 'highlighter',
+                    color: '#eab308', // 기본 노란 형광펜 컬러 고정
+                    thickness: 24, // 두툼하게 지정
+                    opacity: 45, // 투명도 부여
+                    points: [pos]
+                };
+                drawingShapes.push(newShape);
             } else if (currentTool === 'shape') {
                 saveDrawingState();
                 const newShape = {
@@ -1319,7 +1413,7 @@
                     const dx = pos.x - dragStartX;
                     const dy = pos.y - dragStartY;
 
-                    if (selectedElement.type === 'pen') {
+                    if (selectedElement.type === 'pen' || selectedElement.type === 'highlighter') {
                         selectedElement.points = selectedElement.originalPoints.map(p => ({
                             x: p.x + dx,
                             y: p.y + dy
@@ -1338,9 +1432,9 @@
                 return;
             }
 
-            if (currentTool === 'pen') {
+            if (currentTool === 'pen' || currentTool === 'highlighter') {
                 const activeShape = drawingShapes[drawingShapes.length - 1];
-                if (activeShape && activeShape.type === 'pen') {
+                if (activeShape && (activeShape.type === 'pen' || activeShape.type === 'highlighter')) {
                     activeShape.points.push(pos);
                     redrawAllCanvas();
                 }
@@ -1372,7 +1466,7 @@
         function findShapeAtPos(x, y) {
             for (let i = drawingShapes.length - 1; i >= 0; i--) {
                 const s = drawingShapes[i];
-                if (s.type === 'pen') {
+                if (s.type === 'pen' || s.type === 'highlighter') {
                     for (const p of s.points) {
                         const dist = Math.hypot(p.x - x, p.y - y);
                         if (dist < 15) return s;
@@ -1412,7 +1506,7 @@
                     ctx.setLineDash([]);
                 }
 
-                if (s.type === 'pen') {
+                if (s.type === 'pen' || s.type === 'highlighter') {
                     if (s.points.length < 2) return;
                     ctx.beginPath();
                     ctx.moveTo(s.points[0].x, s.points[0].y);
@@ -1602,16 +1696,50 @@
             });
         }
 
-        function clearNotepadAllCanvas() {
-            if (confirm('메모 에디터 텍스트 및 그리기 판서 전체를 모두 깨끗이 지우시겠습니까?')) {
-                saveDrawingState();
-                drawingShapes = [];
-                document.getElementById('note-editor').innerHTML = '';
-                document.getElementById('note-title-input').value = '무제 메모';
-                redrawAllCanvas();
-                triggerNotepadSave();
-                showToast('화이트보드가 백지화되었습니다.');
-            }
+        // 브라우저 기본 confirm() 완전 제거 및 커스텀 비동기 모달 구현
+        function showCustomConfirm(title, message, callback) {
+            const modal = document.getElementById('confirm-modal');
+            const titleEl = document.getElementById('confirm-modal-title');
+            const msgEl = document.getElementById('confirm-modal-msg');
+            const okBtn = document.getElementById('confirm-ok-btn');
+            const cancelBtn = document.getElementById('confirm-cancel-btn');
+
+            if (!modal || !titleEl || !msgEl || !okBtn || !cancelBtn) return;
+
+            titleEl.innerText = title;
+            msgEl.innerText = message;
+            modal.classList.remove('hidden');
+
+            const cleanUp = () => {
+                modal.classList.add('hidden');
+                okBtn.onclick = null;
+                cancelBtn.onclick = null;
+            };
+
+            okBtn.onclick = () => {
+                cleanUp();
+                callback();
+            };
+
+            cancelBtn.onclick = () => {
+                cleanUp();
+            };
+        }
+
+        function clearNotepadAllCanvasWithConfirm() {
+            showCustomConfirm(
+                '🗑️ 전체 청소 확인',
+                '메모장 텍스트 내용과 그 위에 그려진 모든 펜/도형 판서를 전부 깨끗이 지우시겠습니까?',
+                () => {
+                    saveDrawingState();
+                    drawingShapes = [];
+                    document.getElementById('note-editor').innerHTML = '';
+                    document.getElementById('note-title-input').value = '무제 메모';
+                    redrawAllCanvas();
+                    triggerNotepadSave();
+                    showToast('화이트보드가 완전히 백지화되었습니다.');
+                }
+            );
         }
 
 
@@ -1734,7 +1862,6 @@
             document.getElementById('note-title-input').value = targetNote.title || '';
             noteEditor.innerHTML = targetNote.content || '';
 
-            // 맞춤 인라인 크기 및 줄 높이 복원
             noteEditor.style.fontSize = targetNote.fontSize || '';
             noteEditor.style.lineHeight = targetNote.lineHeight || '';
             noteEditor.style.color = targetNote.color || '';
@@ -1796,27 +1923,33 @@
         }
 
         function deleteNote(noteId) {
-            const index = notes.findIndex(n => n.id === noteId);
-            if (index === -1) return;
+            showCustomConfirm(
+                '🗑️ 메모 삭제',
+                '이 메모를 정말로 삭제하시겠습니까? 로컬 스토리지에서 즉시 소멸합니다.',
+                () => {
+                    const index = notes.findIndex(n => n.id === noteId);
+                    if (index === -1) return;
 
-            notes.splice(index, 1);
-            saveNotesToStorage();
-            showToast('메모를 삭제했습니다.', 'info');
+                    notes.splice(index, 1);
+                    saveNotesToStorage();
+                    showToast('메모를 삭제했습니다.', 'info');
 
-            if (activeNoteId === noteId) {
-                if (notes.length > 0) {
-                    selectNote(notes[0].id);
-                } else {
-                    activeNoteId = null;
-                    document.getElementById('note-title-input').value = '';
-                    document.getElementById('note-editor').innerHTML = '';
-                    drawingShapes = [];
-                    redrawAllCanvas();
-                    renderNotepadList();
+                    if (activeNoteId === noteId) {
+                        if (notes.length > 0) {
+                            selectNote(notes[0].id);
+                        } else {
+                            activeNoteId = null;
+                            document.getElementById('note-title-input').value = '';
+                            document.getElementById('note-editor').innerHTML = '';
+                            drawingShapes = [];
+                            redrawAllCanvas();
+                            renderNotepadList();
+                        }
+                    } else {
+                        renderNotepadList();
+                    }
                 }
-            } else {
-                renderNotepadList();
-            }
+            );
         }
 
 
@@ -1876,7 +2009,6 @@
             const noticeEditor = document.getElementById('notice-editor');
             noticeEditor.innerHTML = targetNotice.content || '';
 
-            // 맞춤 크기 및 인라인 속성 복원
             noticeEditor.style.fontSize = targetNotice.fontSize || '';
             noticeEditor.style.lineHeight = targetNotice.lineHeight || '';
             noticeEditor.style.color = targetNotice.color || '';
@@ -1914,26 +2046,32 @@
         }
 
         function deleteNotice(noticeId) {
-            const index = notices.findIndex(n => n.id === noticeId);
-            if (index === -1) return;
+            showCustomConfirm(
+                '🗑️ 알림장 삭제',
+                '선택한 알림장 일지를 정말 영구 삭제하시겠습니까?',
+                () => {
+                    const index = notices.findIndex(n => n.id === noticeId);
+                    if (index === -1) return;
 
-            notices.splice(index, 1);
-            saveNoticesToStorage();
-            showToast('알림장을 삭제했습니다.', 'info');
+                    notices.splice(index, 1);
+                    saveNoticesToStorage();
+                    showToast('알림장을 삭제했습니다.', 'info');
 
-            if (activeNoticeId === noticeId) {
-                if (notices.length > 0) {
-                    selectNotice(notices[0].id);
-                } else {
-                    activeNoticeId = null;
-                    const titleInput = document.getElementById('notice-title-input');
-                    if (titleInput) titleInput.value = '';
-                    document.getElementById('notice-editor').innerHTML = '';
-                    renderNoticeList();
+                    if (activeNoticeId === noticeId) {
+                        if (notices.length > 0) {
+                            selectNotice(notices[0].id);
+                        } else {
+                            activeNoticeId = null;
+                            const titleInput = document.getElementById('notice-title-input');
+                            if (titleInput) titleInput.value = '';
+                            document.getElementById('notice-editor').innerHTML = '';
+                            renderNoticeList();
+                        }
+                    } else {
+                        renderNoticeList();
+                    }
                 }
-            } else {
-                renderNoticeList();
-            }
+            );
         }
 
 
@@ -2043,7 +2181,6 @@
             }
         }
 
-        // 정밀 글씨 선택 하이라이트 변경 유틸
         function applyFontSizeToSelection(size) {
             const selection = window.getSelection();
             if (!selection.rangeCount) return;
@@ -2069,7 +2206,6 @@
             }
         }
 
-        // 서식 지정 통합 가동 엔진
         function formatDoc(command, value = null) {
             restoreSelection();
             const editor = currentTabId === 'tab-notepad' ? document.getElementById('note-editor') : document.getElementById('notice-editor');
@@ -2129,7 +2265,6 @@
             }
         }
 
-        // 서체 지정 엔진 (정예 4대 서체 설정)
         function changeEditorFont(fontValue, editorId) {
             const editor = document.getElementById(editorId);
             if (!editor) return;
@@ -2168,6 +2303,11 @@
             const text = editor.innerText || '';
             const cleanText = text.replace(/\s/g, '');
             countDisplay.innerText = `공백 제외: ${cleanText.length}자`;
+        }
+
+        // 브라우저 기본 인쇄 화면으로 뿜어내기
+        function printCurrentDocument() {
+            window.print();
         }
 
 
@@ -2229,14 +2369,12 @@
             updateDropdownLabelsFromActive('note-editor');
         }
 
-        // 활성화 스타일 기준 커스텀 레이블 동기화 메커니즘
         function updateDropdownLabelsFromActive(editorId) {
             const editor = document.getElementById(editorId);
             if (!editor) return;
             
             const isNotepad = editorId === 'note-editor';
             
-            // 1. 서체 레이블 보정
             let fontName = 'Pretendard';
             if (editor.classList.contains('font-jua')) fontName = '배민 주아체';
             else if (editor.classList.contains('font-gowunDodum')) fontName = '고운돋움체';
@@ -2247,7 +2385,6 @@
             const fontLabelEl = document.getElementById(fontLabelId);
             if (fontLabelEl) fontLabelEl.innerText = `글꼴: ${fontName}`;
             
-            // 2. 글 크기 레이블 보정
             const sizeLabelId = isNotepad ? 'current-size-label' : 'notice-current-size-label';
             const sizeLabelEl = document.getElementById(sizeLabelId);
             if (sizeLabelEl) {
@@ -2255,7 +2392,6 @@
                 sizeLabelEl.innerText = activeSize ? `${activeSize}px` : '글자 크기';
             }
             
-            // 3. 노트 관련 보정
             if (isNotepad) {
                 const bgLabelEl = document.getElementById('current-bg-label');
                 if (bgLabelEl) {
@@ -2305,50 +2441,73 @@
                 const gain = audioCtx.createGain();
 
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
 
-                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.08);
 
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
 
                 osc.start();
-                osc.stop(audioCtx.currentTime + 0.1);
+                osc.stop(audioCtx.currentTime + 0.08);
             } catch (err) {
                 console.error(err);
             }
         }
 
+        // Web Audio 기반 3가지 알림음 선택 구현 (alarm, bell, chime)
         function startAlarmSequence() {
             try {
                 initAudioContext();
                 if (audioAlarmInterval) return;
 
+                const selectedMode = document.querySelector('input[name="alarm-sound-mode"]:checked')?.value || 'alarm';
+
                 const playAlarmBeep = () => {
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
 
-                    osc.type = 'square';
-                    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-
-                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
-
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-
-                    osc.start();
-                    osc.stop(audioCtx.currentTime + 0.4);
+                    if (selectedMode === 'alarm') {
+                        // 🚨 경보형 사이렌
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.4);
+                    } else if (selectedMode === 'bell') {
+                        // 🔔 청아한 골든벨 벨소리
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(659.25, audioCtx.currentTime); // E5
+                        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.8);
+                    } else {
+                        // ✨ 맑은 실로폰 차임벨
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(987.77, audioCtx.currentTime); // B5
+                        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.6);
+                    }
                 };
 
                 playAlarmBeep();
-                setTimeout(playAlarmBeep, 200);
+                setTimeout(playAlarmBeep, 250);
 
                 audioAlarmInterval = setInterval(() => {
                     playAlarmBeep();
-                    setTimeout(playAlarmBeep, 200);
-                }, 1200);
+                    setTimeout(playAlarmBeep, 250);
+                }, 1500);
             } catch (err) {
                 console.error(err);
             }
@@ -2371,6 +2530,12 @@
 
             minInput.value = Math.floor(currentSec / 60);
             secInput.value = currentSec % 60;
+        }
+
+        function resetTimerFields() {
+            document.getElementById('timer-min').value = 0;
+            document.getElementById('timer-sec').value = 0;
+            showToast('타이머 설정 시간이 초기화되었습니다.');
         }
 
         function startTimer() {
@@ -2399,7 +2564,7 @@
 
             document.getElementById('btn-timer-toggle-icon').innerText = '⏸';
             document.getElementById('btn-timer-toggle-text').innerText = '일시정지';
-            document.getElementById('btn-timer-toggle').className = "py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-md transition-all flex items-center justify-center gap-2";
+            document.getElementById('btn-timer-toggle').className = "py-3 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 font-medium rounded-xl border border-zinc-800 transition-all flex items-center justify-center gap-2 text-sm";
         }
 
         function onTimerTick() {
@@ -2442,10 +2607,10 @@
 
             const isCritical = (percent < 20) || (timerRemainingSeconds <= 30);
             if (isCritical) {
-                if (display) display.className = "text-8xl sm:text-[120px] font-extrabold tracking-tight tabular-nums text-rose-500 animate-pulse select-none";
+                if (display) display.className = "text-[150px] sm:text-[250px] font-extrabold tracking-tight tabular-nums text-rose-500 animate-pulse select-none leading-none";
                 if (progressBar) progressBar.className = "h-full bg-gradient-to-r from-red-500 to-rose-600 rounded-full transition-all duration-300";
             } else {
-                if (display) display.className = "text-8xl sm:text-[120px] font-extrabold tracking-tight tabular-nums text-blue-400 select-none";
+                if (display) display.className = "text-[150px] sm:text-[250px] font-extrabold tracking-tight tabular-nums text-blue-400 select-none leading-none";
                 if (progressBar) progressBar.className = "h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-300";
             }
         }
@@ -2468,12 +2633,12 @@
             if (isTimerPaused) {
                 if (icon) icon.innerText = '▶';
                 if (txt) txt.innerText = '이어서 계속';
-                if (toggleBtn) toggleBtn.className = "py-4 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-2xl shadow-md transition-all flex items-center justify-center gap-2";
+                if (toggleBtn) toggleBtn.className = "py-3 bg-amber-900/30 hover:bg-amber-800/50 text-amber-500 hover:text-amber-300 font-medium rounded-xl border border-amber-900/50 transition-all flex items-center justify-center gap-2 text-sm";
                 stopAlarmSequence();
             } else {
                 if (icon) icon.innerText = '⏸';
                 if (txt) txt.innerText = '일시정지';
-                if (toggleBtn) toggleBtn.className = "py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-md transition-all flex items-center justify-center gap-2";
+                if (toggleBtn) toggleBtn.className = "py-3 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 font-medium rounded-xl border border-zinc-800 transition-all flex items-center justify-center gap-2 text-sm";
             }
         }
 
@@ -2619,20 +2784,30 @@
             showToast(`${name} 학생이 명단에서 제외되었습니다.`, 'info');
         }
 
-        function clearAllStudents() {
-            if (confirm('정말로 학급 학생 전체 명단을 삭제하시겠습니까?')) {
-                students = [];
-                pickedStudentIds.clear();
-                updateStudentsState();
-                showToast('명단이 완전히 비워졌습니다.', 'error');
-            }
+        function clearAllStudentsWithConfirm() {
+            showCustomConfirm(
+                '🗑️ 학급 명단 초기화',
+                '정말로 학급에 등록된 학생 전체 명단을 삭제하시겠습니까? 관련 데이터가 소실됩니다.',
+                () => {
+                    students = [];
+                    pickedStudentIds.clear();
+                    updateStudentsState();
+                    showToast('명단이 완전히 비워졌습니다.', 'error');
+                }
+            );
         }
 
-        function resetToSampleStudents() {
-            students = JSON.parse(JSON.stringify(DEFAULT_STUDENTS));
-            pickedStudentIds.clear();
-            updateStudentsState();
-            showToast('샘플 학급 데이터가 복원되었습니다.');
+        function resetToSampleStudentsWithConfirm() {
+            showCustomConfirm(
+                '🔄 샘플 데이터 복원',
+                '현재 명단을 덮어쓰고 기본 학급 샘플 데이터(10명)를 강제 복구하시겠습니까?',
+                () => {
+                    students = JSON.parse(JSON.stringify(DEFAULT_STUDENTS));
+                    pickedStudentIds.clear();
+                    updateStudentsState();
+                    showToast('샘플 학급 데이터가 복원되었습니다.');
+                }
+            );
         }
 
         function renderStudentManageList() {
@@ -3176,6 +3351,84 @@
 
 
         /*************************************************************
+         * [신규] 원격 백업 데이터 보존 및 패키지 가져오기 구현부
+         *************************************************************/
+        function toggleBackupModal(show) {
+            const modal = document.getElementById('backup-modal');
+            if (!modal) return;
+            if (show) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // 전체 교실 환경 변수 다운로드 (.json)
+        function exportAllData() {
+            try {
+                const combinedData = {
+                    notes: notes,
+                    notices: notices,
+                    students: students
+                };
+                
+                const blob = new Blob([JSON.stringify(combinedData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `edutools-backup-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('백업 파일을 생성하여 다운로드했습니다.');
+            } catch (err) {
+                showToast('백업 도중 오류가 발생했습니다.', 'error');
+            }
+        }
+
+        function triggerImportSelection() {
+            document.getElementById('backup-file-input').click();
+        }
+
+        // 백업 데이터 불러오기 복구
+        function importAllData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const parsed = JSON.parse(event.target.result);
+                    
+                    if (parsed.notes && Array.isArray(parsed.notes)) {
+                        notes = parsed.notes;
+                        saveNotesToStorage();
+                    }
+                    if (parsed.notices && Array.isArray(parsed.notices)) {
+                        notices = parsed.notices;
+                        saveNoticesToStorage();
+                    }
+                    if (parsed.students && Array.isArray(parsed.students)) {
+                        students = parsed.students;
+                        saveStudentsToStorage();
+                    }
+
+                    showToast('성공적으로 전체 데이터를 통합 복구했습니다. 화면을 리로드합니다.');
+                    toggleBackupModal(false);
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1200);
+                } catch (err) {
+                    showToast('유효하지 않은 백업 파일 형식이거나 읽기에 실패했습니다.', 'error');
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        }
+
+
+        /*************************************************************
          * [7] 시스템 초기 로드 진입점
          *************************************************************/
         window.onload = function() {
@@ -3289,7 +3542,7 @@
                         loader.remove();
                     }, 500);
                 }
-                showToast('🏫 반갑습니다! 에듀툴즈 블랙 v3가 활성화되었습니다.');
+                showToast('🏫 반갑습니다! 에듀툴즈 블랙 v3 Pro가 활성화되었습니다.');
             }
         };
     </script>
