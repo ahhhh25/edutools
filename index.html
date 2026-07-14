@@ -205,8 +205,8 @@
                 
                 <!-- 좌측 사이드바 -->
                 <div id="notepad-sidebar" class="w-full md:w-80 bg-zinc-950 border-r border-zinc-800 flex flex-col h-full shrink-0 transition-all duration-300 select-none">
-                    <div class="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-900">
-                        <h2 class="font-bold text-zinc-300 flex items-center gap-2">
+                    <div class="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
+                        <h2 class="font-bold text-zinc-400 flex items-center gap-2">
                             <span>📂</span> 내 메모 목록
                         </h2>
                         <button onclick="createNewNote()" class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
@@ -219,10 +219,10 @@
                 </div>
 
                 <!-- 우측 에디터 영역 -->
-                <div class="flex-grow flex flex-col h-full bg-zinc-900 relative min-w-0">
+                <div class="flex-grow flex flex-col h-full bg-zinc-900 relative">
                     
-                    <!-- 상단 통합 제어 & 서식 툴바 (한줄 정렬) -->
-                    <div class="p-2 bg-zinc-950 border-b border-zinc-800 flex flex-nowrap items-center gap-2.5 select-none relative z-30 overflow-x-auto hide-scrollbar whitespace-nowrap">
+                    <!-- 상단 통합 제어 & 서식 툴바 -->
+                    <div class="p-3 bg-zinc-950 border-b border-zinc-800 flex flex-wrap items-center gap-2.5 select-none relative z-50">
                         
                         <!-- [목록 접기/펼치기] 툴바 고정 버튼 -->
                         <button onclick="toggleSidebarNotepad()" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 rounded-lg text-xs font-bold flex items-center gap-1 transition-all shrink-0">
@@ -234,7 +234,7 @@
                         <!-- 1. 커스텀 글꼴 셀렉터 (요청 4종 폰트 특화 배치) -->
                         <div class="relative" id="font-dropdown-container">
                             <button type="button" onmousedown="event.preventDefault()" onclick="toggleCustomDropdown('font-dropdown-menu')" class="bg-zinc-800 text-zinc-100 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold hover:bg-zinc-700 focus:outline-none flex items-center gap-1 transition-colors">
-                                <span id="current-font-label">글꼴: 기본 (Pretendard)</span>
+                                <span id="current-font-label">글꼴</span>
                                 <span class="text-[9px] text-zinc-400">▼</span>
                             </button>
                             <div id="font-dropdown-menu" class="hidden absolute left-0 mt-1.5 w-52 bg-zinc-900/95 border border-zinc-700 rounded-xl shadow-2xl z-50 py-1 backdrop-blur-md">
@@ -248,7 +248,7 @@
                         <!-- 2. 커스텀 배경 스타일 스위처 -->
                         <div class="relative" id="bg-dropdown-container">
                             <button type="button" onmousedown="event.preventDefault()" onclick="toggleCustomDropdown('bg-dropdown-menu')" class="bg-zinc-800 text-yellow-400 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-bold hover:bg-zinc-700 focus:outline-none flex items-center gap-1 transition-colors">
-                                <span id="current-bg-label">🌑 기본 어두운 배경</span>
+                                <span id="current-bg-label">배경</span>
                                 <span class="text-[9px] text-zinc-400">▼</span>
                             </button>
                             <div id="bg-dropdown-menu" class="hidden absolute left-0 mt-1.5 w-44 bg-zinc-900/95 border border-zinc-700 rounded-xl shadow-2xl z-50 py-1 backdrop-blur-md">
@@ -260,7 +260,7 @@
                         <!-- 3. 커스텀 줄간격 조절창 -->
                         <div class="relative" id="lh-dropdown-container">
                             <button type="button" onmousedown="event.preventDefault()" onclick="toggleCustomDropdown('lh-dropdown-menu')" class="bg-zinc-800 text-teal-400 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-bold hover:bg-zinc-700 focus:outline-none flex items-center gap-1 transition-colors">
-                                <span id="current-lh-label">줄간격: 보통</span>
+                                <span id="current-lh-label">줄간격</span>
                                 <span class="text-[9px] text-zinc-400">▼</span>
                             </button>
                             <div id="lh-dropdown-menu" class="hidden absolute left-0 mt-1.5 w-52 bg-zinc-900/95 border border-zinc-700 rounded-xl shadow-2xl z-50 py-1 max-h-60 overflow-y-auto backdrop-blur-md">
@@ -278,7 +278,7 @@
                         <!-- 4. 커스텀 글자 크기 조정 -->
                         <div class="relative" id="size-dropdown-container">
                             <button type="button" onmousedown="event.preventDefault()" onclick="toggleCustomDropdown('size-dropdown-menu')" class="bg-zinc-800 text-zinc-100 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs font-semibold hover:bg-zinc-700 focus:outline-none flex items-center gap-1 transition-colors">
-                                <span id="current-size-label">글자 크기</span>
+                                <span id="current-size-label">크기</span>
                                 <span class="text-[9px] text-zinc-400">▼</span>
                             </button>
                             <div id="size-dropdown-menu" class="hidden absolute left-0 mt-1.5 w-28 bg-zinc-900/95 border border-zinc-700 rounded-xl shadow-2xl z-50 py-1 max-h-60 overflow-y-auto backdrop-blur-md">
@@ -316,42 +316,21 @@
                         <div class="h-6 w-px bg-zinc-800 mx-0.5"></div>
 
                         <!-- 화이트보드 인터랙티브 기능군 -->
-                        <div class="flex items-center gap-1 bg-zinc-900 px-2 py-1 rounded-xl border border-zinc-800 shrink-0">
-                            <span class="text-[10px] text-zinc-500 font-bold mr-1">모드</span>
-                            <button onclick="setNotepadTool('text')" id="tool-text" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white" title="에디터 글쓰기 모드">
-                                가 (텍스트)
-                            </button>
-                            <button onclick="setNotepadTool('pen')" id="tool-pen" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-zinc-400 hover:bg-zinc-800" title="자유 연필 드로잉">
-                                ✏️ 펜
-                            </button>
-                            <button onclick="setNotepadTool('highlighter')" id="tool-highlighter" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-zinc-400 hover:bg-zinc-800" title="텍스트 형광펜 강조">
-                                🖊️ 형광펜
-                            </button>
-                            <button onclick="toggleShapePanel()" id="tool-shape" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-zinc-400 hover:bg-zinc-800 flex items-center gap-1" title="정밀 벡터 기하 도형">
-                                📐 도형 ▾
-                            </button>
-                            <button onclick="setNotepadTool('eraser')" id="tool-eraser" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-zinc-400 hover:bg-zinc-800" title="드로잉 객체 지우개">
-                                🧼 지우개
-                            </button>
-                            <button onclick="setNotepadTool('select')" id="tool-select" class="px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-zinc-400 hover:bg-zinc-800" title="도형 및 이미지 선택 이동">
-                                ✋ 선택/이동
-                            </button>
-                            <button onclick="triggerImageUpload()" class="px-2.5 py-1 bg-zinc-850 hover:bg-zinc-750 text-zinc-300 rounded-lg text-xs font-bold transition-all" title="외부 그래픽 자료 로드">
-                                🖼️ 그림 삽입
-                            </button>
+                        <div class="flex items-center gap-1 bg-zinc-900 px-1 py-1 rounded-xl border border-zinc-800">
+                            <button onclick="setNotepadTool('text')" id="tool-text" class="w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold transition-all bg-blue-600 text-white" title="텍스트 작성">가</button>
+                            <button onclick="setNotepadTool('pen')" id="tool-pen" class="w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold transition-all text-zinc-400 hover:bg-zinc-800" title="자유 연필 드로잉">✏️</button>
+                            <button onclick="toggleShapePanel()" id="tool-shape" class="w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold transition-all text-zinc-400 hover:bg-zinc-800" title="정밀 벡터 기하 도형">📐</button>
+                            <button onclick="setNotepadTool('eraser')" id="tool-eraser" class="w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold transition-all text-zinc-400 hover:bg-zinc-800" title="드로잉 객체 지우개">🧼</button>
+                            <button onclick="setNotepadTool('select')" id="tool-select" class="w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold transition-all text-zinc-400 hover:bg-zinc-800" title="도형 및 이미지 선택 이동">✋</button>
+                            <button onclick="triggerImageUpload()" class="w-8 h-8 flex items-center justify-center bg-zinc-850 hover:bg-zinc-750 text-zinc-300 rounded-lg text-sm font-bold transition-all" title="외부 그래픽 자료 로드">🖼️</button>
                             <input type="file" id="note-img-uploader" accept="image/*" class="hidden" onchange="loadWebImage(event)">
                         </div>
 
-                        <!-- 프린트 및 다운로드 컨트롤러 -->
-                        <div class="flex items-center gap-1">
-                            <button onclick="printCurrentDocument()" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold" title="현재 메모 인쇄 / PDF 저장">🖨️ 인쇄/PDF</button>
-                        </div>
-
                         <!-- 드로잉 편집 컨트롤러 (Undo / Redo / Clear) -->
-                        <div class="flex items-center gap-1.5 ml-auto shrink-0 pr-2">
+                        <div class="flex items-center gap-1.5 ml-auto">
                             <button onclick="undoNotepadDrawing()" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold" title="되돌리기">↩️</button>
                             <button onclick="redoNotepadDrawing()" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold" title="다시실행">↪️</button>
-                            <button onclick="clearNotepadAllCanvas()" class="p-1.5 bg-rose-950 hover:bg-rose-900 border border-rose-900 text-rose-300 rounded-lg text-xs font-bold" title="모든 그림 및 판서 일괄 청소">🧹 전체 지우기</button>
+                            <button onclick="clearNotepadAllCanvas()" class="p-1.5 bg-rose-950 hover:bg-rose-900 border border-rose-900 text-rose-300 rounded-lg text-xs font-bold" title="모든 그림 및 판서 일괄 청소">🧹 지우기</button>
                         </div>
                     </div>
 
@@ -456,8 +435,8 @@
                 
                 <!-- 좌측 사이드바 -->
                 <div id="notice-sidebar" class="w-full md:w-80 bg-zinc-950 border-r border-zinc-800 flex flex-col h-full shrink-0 transition-all duration-300 select-none">
-                    <div class="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-900">
-                        <h2 class="font-bold text-zinc-300 flex items-center gap-2">
+                    <div class="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
+                        <h2 class="font-bold text-zinc-400 flex items-center gap-2">
                             <span>📅</span> 역대 알림장 목록
                         </h2>
                         <button onclick="createNewNotice()" class="p-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors">
@@ -470,10 +449,10 @@
                 </div>
 
                 <!-- 우측 에디터 영역 -->
-                <div class="flex-grow flex flex-col h-full bg-zinc-900 relative min-w-0">
+                <div class="flex-grow flex flex-col h-full bg-zinc-900 relative">
                     
-                    <!-- 상단 통합 제어 & 서식 툴바 (한줄 정렬) -->
-                    <div class="p-2 bg-zinc-950 border-b border-zinc-800 flex flex-nowrap items-center gap-2.5 select-none relative z-30 overflow-x-auto hide-scrollbar whitespace-nowrap">
+                    <!-- 상단 통합 제어 & 서식 툴바 -->
+                    <div class="p-3 bg-zinc-950 border-b border-zinc-800 flex flex-wrap items-center gap-2.5 select-none relative z-50">
                         
                         <!-- [목록 접기/펼치기] 툴바 고정 버튼 -->
                         <button onclick="toggleSidebarNotice()" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 rounded-lg text-xs font-bold flex items-center gap-1 transition-all shrink-0">
@@ -485,7 +464,7 @@
                         <!-- 1. 알림장 커스텀 글꼴 셀렉터 (요청 서체 세팅 연계) -->
                         <div class="relative" id="notice-font-dropdown-container">
                             <button type="button" onmousedown="event.preventDefault()" onclick="toggleCustomDropdown('notice-font-dropdown-menu')" class="bg-zinc-800 text-zinc-100 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold hover:bg-zinc-700 focus:outline-none flex items-center gap-1 transition-colors">
-                                <span id="notice-current-font-label">글꼴: 기본 (Pretendard)</span>
+                                <span id="notice-current-font-label">글꼴</span>
                                 <span class="text-[9px] text-zinc-400">▼</span>
                             </button>
                             <div id="notice-font-dropdown-menu" class="hidden absolute left-0 mt-1.5 w-52 bg-zinc-900/95 border border-zinc-700 rounded-xl shadow-2xl z-50 py-1 backdrop-blur-md">
@@ -499,7 +478,7 @@
                         <!-- 2. 알림장 커스텀 글꼴 크기 셀렉터 -->
                         <div class="relative" id="notice-size-dropdown-container">
                             <button type="button" onmousedown="event.preventDefault()" onclick="toggleCustomDropdown('notice-size-dropdown-menu')" class="bg-zinc-800 text-zinc-100 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs font-semibold hover:bg-zinc-700 focus:outline-none flex items-center gap-1 transition-colors">
-                                <span id="notice-current-size-label">글자 크기 변경</span>
+                                <span id="notice-current-size-label">크기</span>
                                 <span class="text-[9px] text-zinc-400">▼</span>
                             </button>
                             <div id="notice-size-dropdown-menu" class="hidden absolute left-0 mt-1.5 w-28 bg-zinc-900/95 border border-zinc-700 rounded-xl shadow-2xl z-50 py-1 max-h-60 overflow-y-auto backdrop-blur-md">
@@ -1142,17 +1121,17 @@
             }
 
             // 모든 툴 버튼 원복 후 활성 클래스 부여
-            const toolButtons = ['tool-text', 'tool-pen', 'tool-highlighter', 'tool-shape', 'tool-eraser', 'tool-select'];
+            const toolButtons = ['tool-text', 'tool-pen', 'tool-shape', 'tool-eraser', 'tool-select'];
             toolButtons.forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) {
-                    btn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-zinc-400 hover:bg-zinc-800";
+                    btn.className = "w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold transition-all text-zinc-400 hover:bg-zinc-800";
                 }
             });
 
             const activeBtn = document.getElementById('tool-' + tool);
             if (activeBtn) {
-                activeBtn.className = "px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white";
+                activeBtn.className = "w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold transition-all bg-blue-600 text-white";
             }
 
             // 캔버스 마우스 감지 조건 할당 (텍스트가 아닐 때 캔버스 감지 온)
@@ -2369,56 +2348,11 @@
             updateDropdownLabelsFromActive('note-editor');
         }
 
+        // 활성화 스타일 기준 커스텀 레이블 동기화 메커니즘
         function updateDropdownLabelsFromActive(editorId) {
-            const editor = document.getElementById(editorId);
-            if (!editor) return;
-            
-            const isNotepad = editorId === 'note-editor';
-            
-            let fontName = 'Pretendard';
-            if (editor.classList.contains('font-jua')) fontName = '배민 주아체';
-            else if (editor.classList.contains('font-gowunDodum')) fontName = '고운돋움체';
-            else if (editor.classList.contains('font-notoSans')) fontName = '본고딕';
-            else fontName = '기본 (Pretendard)';
-            
-            const fontLabelId = isNotepad ? 'current-font-label' : 'notice-current-font-label';
-            const fontLabelEl = document.getElementById(fontLabelId);
-            if (fontLabelEl) fontLabelEl.innerText = `글꼴: ${fontName}`;
-            
-            const sizeLabelId = isNotepad ? 'current-size-label' : 'notice-current-size-label';
-            const sizeLabelEl = document.getElementById(sizeLabelId);
-            if (sizeLabelEl) {
-                const activeSize = editor.style.fontSize ? parseInt(editor.style.fontSize) : null;
-                sizeLabelEl.innerText = activeSize ? `${activeSize}px` : '글자 크기';
-            }
-            
-            if (isNotepad) {
-                const bgLabelEl = document.getElementById('current-bg-label');
-                if (bgLabelEl) {
-                    const isLined = editor.classList.contains('lined-light-bg');
-                    bgLabelEl.innerText = isLined ? '📝 흰색 노트 배경' : '🌑 기본 어두운 배경';
-                }
-                
-                const lhLabelEl = document.getElementById('current-lh-label');
-                if (lhLabelEl && activeNoteId) {
-                    const note = notes.find(n => n.id === activeNoteId);
-                    let lhText = '줄간격: 보통';
-                    if (note && note.lineHeight) {
-                        const heights = {
-                            '0.8': '줄간격: 매우 좁게 (0.8)',
-                            '1.0': '줄간격: 좁게 (1.0)',
-                            '1.2': '줄간격: 조금 좁게 (1.2)',
-                            'normal': '줄간격: 보통',
-                            '1.5': '줄간격: 1.5배',
-                            '1.8': '줄간격: 1.8배',
-                            '2.0': '줄간격: 2.0배',
-                            '2.5': '줄간격: 2.5배'
-                        };
-                        lhText = heights[note.lineHeight] || '줄간격: 보통';
-                    }
-                    lhLabelEl.innerText = lhText;
-                }
-            }
+            // 사용자의 요청("글꼴, 배경, 줄간격")에 따라 라벨을 단순화하고 정적 유지하기 위해
+            // 동적으로 텍스트를 업데이트하여 길어지게 만드는 기존 로직을 제거합니다.
+            // 버튼명은 HTML에 고정된 상태 그대로 간소하게 1줄로 유지됩니다.
         }
 
 
