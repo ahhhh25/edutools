@@ -93,8 +93,16 @@
             background-image: linear-gradient(rgba(59, 130, 246, 0.15) 1.5px, transparent 1.5px) !important;
             background-size: 100% 60px;
             line-height: 60px;
-            padding-top: 10px !important;
             background-position-y: 8px !important;
+        }
+
+        #note-editor {
+            overflow: visible;
+            box-sizing: border-box;
+        }
+
+        #editor-scroller {
+            overflow-x: hidden;
         }
 
         /* 툴바 한줄 정렬용 스크롤바 숨기기 유틸 */
@@ -359,10 +367,9 @@
                             <button onclick="clearNotepadAllCanvasWithConfirm()" class="p-1.5 bg-rose-950 hover:bg-rose-900 border border-rose-900 text-rose-300 rounded-lg text-xs font-bold" title="모든 그림 및 판서 일괄 청소">🧹 지우기</button>
                             <button onclick="openEditorFullscreen('notepad')" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold" title="전체화면">⛶</button>
                         </div>
-                    </div>
 
                     <!-- [정밀 도형 스타일러스 컨트롤 팝업창] -->
-                    <div id="drawing-shape-popup" class="hidden absolute top-16 left-4 z-30 w-72 bg-zinc-900/95 border-2 border-zinc-800 rounded-2xl shadow-2xl p-4 space-y-4 select-none">
+                    <div id="drawing-shape-popup" onmousedown="event.stopPropagation()" class="hidden absolute top-full left-4 mt-2 z-[60] w-72 bg-zinc-900/95 border-2 border-zinc-800 rounded-2xl shadow-2xl p-4 space-y-4 pointer-events-auto">
                         <!-- 컬러 팔레트 8종 -->
                         <div class="space-y-1">
                             <label class="text-[10px] text-zinc-500 font-bold uppercase block">도형 및 판서 색상</label>
@@ -427,15 +434,16 @@
                             </div>
                         </div>
                     </div>
+                    </div>
 
                     <!-- 에디터 & 투명 캔버스 레이어 결합 보디 -->
-                    <div class="flex-grow flex flex-col p-6 overflow-hidden relative transition-all duration-300" id="notepad-workspace">
+                    <div class="flex-grow flex flex-col p-6 min-h-0 relative z-0 transition-all duration-300" id="notepad-workspace">
                         
                         <!-- 스크롤 가능한 에디터 기단부 컨테이너 -->
-                        <div class="flex-grow w-full relative overflow-y-auto min-h-0" id="editor-scroller">
+                        <div class="flex-grow w-full relative overflow-y-auto min-h-0 flex flex-col" id="editor-scroller">
                             
                             <!-- [하이브리드 텍스트 에디터 레이어] (30px~80px 커스텀 크기로 가동) -->
-                            <div id="note-editor" contenteditable="true" class="w-full h-full min-h-full focus:outline-none text-zinc-100 leading-relaxed text-4xl font-bold font-sans relative z-10 select-text"></div>
+                            <div id="note-editor" contenteditable="true" class="flex-1 w-full focus:outline-none text-zinc-100 leading-relaxed text-4xl font-bold font-sans relative z-30 select-text"></div>
                             
                             <!-- [투명 무한 드로잉 캔버스 오버레이 레이어] -->
                             <canvas id="note-canvas" class="absolute top-0 left-0 w-full h-full z-20 pointer-events-none"></canvas>
@@ -826,7 +834,7 @@
                             <!-- 제어 버튼들 -->
                             <div class="flex gap-4 select-none">
                                 <button id="btn-start-group-pick" onclick="runGroupPick()" class="flex-grow py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2">
-                                    <span>🎲</span> 모둠 랜덤 뽑기 시작!
+                                    시작
                                 </button>
                                 <button onclick="resetGroupPick()" class="px-6 py-4 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold rounded-2xl transition-all border border-zinc-700">
                                     초기화
@@ -850,7 +858,7 @@
                                     </select>
                                 </div>
                                 <button onclick="generateGroupOrder()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow transition-all">
-                                    순서 추첨 실행
+                                    시작
                                 </button>
                             </div>
 
@@ -887,7 +895,7 @@
                                 </div>
                                 <div class="flex flex-col sm:flex-row gap-2">
                                     <button onclick="buildAutomaticGroups()" class="flex-grow py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm rounded-xl shadow transition-all select-none">
-                                        🎲 명단 무작위 모둠 조합 실행
+                                        시작
                                     </button>
                                     <button id="btn-group-make-fullscreen" onclick="openGroupMakeFullscreen()" class="hidden px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl shadow transition-all select-none shrink-0">
                                         🔍 크게 보기
@@ -896,8 +904,8 @@
                             </div>
 
                             <!-- 결과물 카드 그리드 영역 -->
-                            <div id="group-make-results-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4 select-none">
-                                <p class="text-zinc-500 text-center text-sm col-span-2 py-8">학생 명단을 바탕으로 새로운 모둠이 하단에 조립됩니다.</p>
+                            <div id="group-make-results-container" class="w-full select-none">
+                                <p class="text-zinc-500 text-center text-sm py-8">학생 명단을 바탕으로 새로운 모둠이 하단에 조립됩니다.</p>
                             </div>
                         </div>
 
@@ -1060,6 +1068,7 @@
         let isTimerPaused = true;
         let audioCtx = null;
         let audioAlarmInterval = null;
+        let audioAlarmStopTimeoutId = null;
 
         // 개인 랜덤 뽑기 현황 정보
         let pickedStudentIds = new Set();
@@ -1145,14 +1154,32 @@
                 const mouseEvent = new MouseEvent('mouseup', {});
                 canvas.dispatchEvent(mouseEvent);
             }, { passive: false });
+
+            const scroller = document.getElementById('editor-scroller');
+            const noteEditor = document.getElementById('note-editor');
+            if (scroller && noteEditor) {
+                scroller.addEventListener('mousedown', (e) => {
+                    if (currentTool !== 'text' || currentTabId !== 'tab-notepad') return;
+                    if (e.target === canvas || e.target === scroller) {
+                        e.preventDefault();
+                        noteEditor.focus();
+                    }
+                });
+            }
         }
 
         function resizeNotepadCanvas() {
             if (!canvas) return;
             const scroller = document.getElementById('editor-scroller');
+            const noteEditor = document.getElementById('note-editor');
             if (scroller) {
+                const minH = Math.max(scroller.clientHeight, 600);
                 canvas.width = scroller.clientWidth;
-                canvas.height = Math.max(scroller.scrollHeight, scroller.clientHeight, 600);
+                canvas.height = Math.max(scroller.scrollHeight, minH);
+                if (noteEditor) {
+                    noteEditor.style.minHeight = `${minH}px`;
+                    syncNoteEditorVerticalSpace(noteEditor);
+                }
                 redrawAllCanvas();
             }
         }
@@ -1183,11 +1210,24 @@
 
             // 캔버스 마우스 감지 조건 할당 (텍스트가 아닐 때 캔버스 감지 온)
             const canvasLayer = document.getElementById('note-canvas');
+            const noteEditor = document.getElementById('note-editor');
             if (canvasLayer) {
                 if (tool === 'text') {
                     canvasLayer.classList.add('pointer-events-none');
+                    canvasLayer.style.zIndex = '20';
                 } else {
                     canvasLayer.classList.remove('pointer-events-none');
+                    canvasLayer.style.zIndex = '30';
+                }
+            }
+            if (noteEditor) {
+                noteEditor.contentEditable = 'true';
+                if (tool === 'text') {
+                    noteEditor.style.zIndex = '30';
+                    noteEditor.style.pointerEvents = 'auto';
+                } else {
+                    noteEditor.style.zIndex = '10';
+                    noteEditor.style.pointerEvents = 'none';
                 }
             }
             if (!isInitialLoad) {
@@ -1224,6 +1264,25 @@
             }
         }
 
+        function syncNoteEditorVerticalSpace(editor) {
+            if (!editor) return;
+            const activeSize = parseInt(editor.style.fontSize, 10) || 36;
+            const topPad = Math.max(8, Math.round(activeSize * 0.18));
+            const bottomPad = Math.max(4, Math.round(activeSize * 0.08));
+            editor.style.paddingTop = `${topPad}px`;
+            editor.style.paddingBottom = `${bottomPad}px`;
+
+            const currentLh = parseInt(editor.style.lineHeight, 10) || Math.round(activeSize * 1.6);
+            const minLh = Math.round(activeSize * 1.25);
+            if (currentLh < minLh) {
+                editor.style.lineHeight = `${minLh}px`;
+                if (editor.classList.contains('lined-light-bg')) {
+                    editor.style.backgroundSize = `100% ${minLh}px`;
+                    editor.style.backgroundPositionY = `${Math.round(topPad * 0.5)}px`;
+                }
+            }
+        }
+
         // 배경 모드 변경 (plain <-> lined)
         function changeNotepadBackground(mode) {
             const workspace = document.getElementById('notepad-workspace');
@@ -1236,9 +1295,9 @@
                 editor.classList.add('lined-light-bg');
                 
                 let activeSize = parseInt(editor.style.fontSize) || 36;
-                const computedLineHeight = Math.round(activeSize * 1.6);
-                editor.style.backgroundSize = `100% ${computedLineHeight}px`;
+                const computedLineHeight = Math.max(Math.round(activeSize * 1.6), Math.round(activeSize * 1.25));
                 editor.style.lineHeight = `${computedLineHeight}px`;
+                editor.style.backgroundSize = `100% ${computedLineHeight}px`;
 
                 if (!isInitialLoad) {
                     showToast('흰색 노트배경 테마가 활성화되었습니다.');
@@ -1259,6 +1318,7 @@
                     showToast('기본 어두운 테마 배경으로 복구되었습니다.');
                 }
             }
+            syncNoteEditorVerticalSpace(editor);
             triggerNotepadSave();
         }
 
@@ -1291,18 +1351,21 @@
                 activeSize = parseInt(editor.style.fontSize) || 36;
             }
             if (value === 'normal') {
-                const computedLineHeight = Math.round(activeSize * 1.6);
+                const computedLineHeight = Math.max(Math.round(activeSize * 1.6), Math.round(activeSize * 1.25));
                 editor.style.lineHeight = `${computedLineHeight}px`;
                 if (editor.classList.contains('lined-light-bg')) {
                     editor.style.backgroundSize = `100% ${computedLineHeight}px`;
                 }
             } else {
                 const multiplier = parseFloat(value);
-                const computedLineHeight = Math.round(activeSize * multiplier * 1.6);
+                const computedLineHeight = Math.max(Math.round(activeSize * multiplier * 1.6), Math.round(activeSize * 1.25));
                 editor.style.lineHeight = `${computedLineHeight}px`;
                 if (editor.classList.contains('lined-light-bg')) {
                     editor.style.backgroundSize = `100% ${computedLineHeight}px`;
                 }
+            }
+            if (editor.id === 'note-editor') {
+                syncNoteEditorVerticalSpace(editor);
             }
         }
 
@@ -1321,6 +1384,7 @@
         }
 
         function startDrawing(e) {
+            if (e.target && e.target.closest && e.target.closest('#drawing-shape-popup')) return;
             const pos = getCanvasMousePos(e);
 
             if (currentTool === 'select') {
@@ -1950,6 +2014,7 @@
             updateWordCount('note-editor', 'note-word-count');
             updateDropdownLabelsFromActive('note-editor');
             
+            syncNoteEditorVerticalSpace(noteEditor);
             setNotepadTool('text');
         }
 
@@ -2262,11 +2327,14 @@
                         });
                         editor.style.fontSize = value + 'px';
                         
-                        const computedLineHeight = Math.round(value * 1.6);
+                        const computedLineHeight = Math.max(Math.round(value * 1.6), Math.round(value * 1.25));
                         editor.style.lineHeight = `${computedLineHeight}px`;
                         
                         if (currentTabId === 'tab-notepad' && editor.classList.contains('lined-light-bg')) {
                             editor.style.backgroundSize = `100% ${computedLineHeight}px`;
+                        }
+                        if (currentTabId === 'tab-notepad') {
+                            syncNoteEditorVerticalSpace(editor);
                         }
                     } else if (command === 'bold') {
                         editor.style.fontWeight = editor.style.fontWeight === 'bold' ? 'normal' : 'bold';
@@ -2496,6 +2564,10 @@
                     playAlarmBeep();
                     setTimeout(playAlarmBeep, 250);
                 }, 1500);
+
+                audioAlarmStopTimeoutId = setTimeout(() => {
+                    stopAlarmSequence();
+                }, 3000);
             } catch (err) {
                 console.error(err);
             }
@@ -2505,6 +2577,10 @@
             if (audioAlarmInterval) {
                 clearInterval(audioAlarmInterval);
                 audioAlarmInterval = null;
+            }
+            if (audioAlarmStopTimeoutId) {
+                clearTimeout(audioAlarmStopTimeoutId);
+                audioAlarmStopTimeoutId = null;
             }
         }
 
@@ -3252,25 +3328,25 @@
             const fCount = members.filter(m => m.gender === 'F').length;
             const groupTitleClass = isFullscreen ? 'text-3xl sm:text-4xl font-black text-yellow-400' : 'text-lg font-black text-yellow-400';
             const nameClass = isFullscreen
-                ? 'text-2xl sm:text-3xl font-black text-zinc-100'
-                : (isShuffling ? 'text-xl font-black text-zinc-200 animate-shuffle-shake' : 'text-xl font-black text-zinc-100');
+                ? 'text-3xl sm:text-4xl font-black text-zinc-100'
+                : (isShuffling ? 'text-2xl sm:text-3xl font-black text-zinc-200 animate-shuffle-shake' : 'text-2xl sm:text-3xl font-black text-zinc-100');
             const cardPadding = isFullscreen ? 'p-6' : 'p-4';
-            const gridCols = isFullscreen ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2';
+            const cardWidthClass = isFullscreen ? 'w-full' : 'w-full min-w-0';
 
             return `
-                <div class="bg-zinc-900 ${cardPadding} rounded-2xl border border-zinc-800 shadow-sm space-y-3 ${isShuffling ? 'animate-shuffle-shake' : ''}">
+                <div class="bg-zinc-900 ${cardPadding} rounded-2xl border border-zinc-800 shadow-sm space-y-3 ${isShuffling ? 'animate-shuffle-shake' : ''} ${cardWidthClass}">
                     <div class="flex justify-between items-center border-b pb-2 border-zinc-800">
                         <h5 class="${groupTitleClass}">${gIdx + 1} 모둠 <span class="text-sm text-zinc-500 font-bold">(${members.length}명)</span></h5>
-                        <div class="text-xs text-zinc-400 font-semibold">남 ${mCount} / 여 ${fCount}</div>
+                        <div class="text-xs text-zinc-400 font-semibold whitespace-nowrap">남 ${mCount} / 여 ${fCount}</div>
                     </div>
-                    <div class="grid ${gridCols} gap-2">
-                        ${members.length === 0 ? '<p class="text-zinc-500 text-sm col-span-2 text-center py-2">-</p>' : members.map(member => {
+                    <div class="flex flex-wrap gap-2">
+                        ${members.length === 0 ? '<p class="text-zinc-500 text-sm w-full text-center py-2">-</p>' : members.map(member => {
                             const genderText = member.gender === 'M' ? '남' : member.gender === 'F' ? '여' : '';
                             const genderColor = member.gender === 'M' ? 'text-blue-400' : member.gender === 'F' ? 'text-pink-400' : 'text-zinc-500';
                             return `
-                                <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 flex items-center justify-between">
-                                    <span class="${nameClass}">${member.name}</span>
-                                    ${genderText ? `<span class="${genderColor} text-sm font-bold">${genderText}</span>` : ''}
+                                <div class="inline-flex items-center gap-2 bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 shrink-0 max-w-full">
+                                    <span class="${nameClass} whitespace-nowrap">${member.name}</span>
+                                    ${genderText ? `<span class="${genderColor} text-base font-bold whitespace-nowrap shrink-0">${genderText}</span>` : ''}
                                 </div>
                             `;
                         }).join('')}
@@ -3286,13 +3362,13 @@
             if (!resultsBox) return;
 
             if (!isFullscreen && groupContainers.length === 0) {
-                resultsBox.innerHTML = '<p class="text-zinc-500 text-center text-sm col-span-2 py-8">학생 명단을 바탕으로 새로운 모둠이 하단에 조립됩니다.</p>';
+                resultsBox.innerHTML = '<p class="text-zinc-500 text-center text-sm w-full py-8">학생 명단을 바탕으로 새로운 모둠이 하단에 조립됩니다.</p>';
                 return;
             }
 
             const gridClass = isFullscreen
-                ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'
-                : 'grid grid-cols-1 sm:grid-cols-2 gap-4';
+                ? 'grid w-full max-w-7xl mx-auto gap-6 grid-cols-[repeat(auto-fit,minmax(320px,1fr))]'
+                : 'grid w-full gap-4 grid-cols-[repeat(auto-fit,minmax(280px,1fr))] justify-center';
 
             resultsBox.innerHTML = `<div class="${gridClass}">${groupContainers.map((members, gIdx) => buildGroupMakeCardHTML(members, gIdx, isShuffling, isFullscreen)).join('')}</div>`;
         }
@@ -3464,7 +3540,10 @@
             });
 
             if (tabId === 'tab-notepad') {
-                setTimeout(resizeNotepadCanvas, 50);
+                setTimeout(() => {
+                    resizeNotepadCanvas();
+                    setNotepadTool(currentTool === 'text' ? 'text' : currentTool);
+                }, 50);
             }
 
             if (tabId === 'tab-notice') {
