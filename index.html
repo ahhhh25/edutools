@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -89,7 +89,7 @@
         /* 밝은 테마 흰 노트 줄 배경 */
         .lined-light-bg {
             background-color: #ffffff !important;
-            color: #18181b !important;
+            color: #000000 !important;
             background-image: linear-gradient(rgba(59, 130, 246, 0.15) 1.5px, transparent 1.5px) !important;
             background-size: 100% 60px;
             line-height: 60px;
@@ -105,6 +105,16 @@
         .hide-scrollbar::-webkit-scrollbar {
             display: none;
         }
+
+        /* 셔플 연출 애니메이션 */
+        @keyframes shuffleShake {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(-6px) rotate(-2deg); }
+            75% { transform: translateX(6px) rotate(2deg); }
+        }
+        .animate-shuffle-shake {
+            animation: shuffleShake 0.12s ease-in-out infinite;
+        }
     </style>
 </head>
 <body class="bg-zinc-950 font-sans text-zinc-100 min-h-screen flex flex-col antialiased">
@@ -117,9 +127,6 @@
         </div>
         <p class="mt-4 text-zinc-400 font-semibold text-lg">스마트 에듀 패키지를 준비하고 있습니다...</p>
     </div>
-
-    <!-- 커스텀 토스트 알림 컨테이너 -->
-    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none select-none"></div>
 
     <!-- 스마트 커스텀 확인 모달 다이얼로그 (alert/confirm 대체제) -->
     <div id="confirm-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 select-none">
@@ -134,6 +141,18 @@
                 <button id="confirm-ok-btn" class="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-xl text-xs transition-all">확인</button>
             </div>
         </div>
+    </div>
+
+    <!-- 에디터 전체화면 모달 -->
+    <div id="editor-fullscreen-modal" class="hidden fixed inset-0 bg-zinc-950 z-[60] select-none">
+        <button onclick="closeEditorFullscreen()" class="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded-lg text-xs transition-all" title="닫기">✕</button>
+        <div id="editor-fullscreen-content" class="w-full h-full overflow-auto p-6 md:p-12 flex items-start justify-center"></div>
+    </div>
+
+    <!-- 모둠 빌더 크게 보기 모달 -->
+    <div id="group-make-fullscreen-modal" class="hidden fixed inset-0 bg-zinc-950 z-[60] select-none overflow-auto">
+        <button onclick="closeGroupMakeFullscreen()" class="fixed top-4 right-4 z-10 w-8 h-8 flex items-center justify-center bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded-lg text-xs transition-all" title="닫기">✕</button>
+        <div id="group-make-fullscreen-content" class="p-6 md:p-10 max-w-7xl mx-auto"></div>
     </div>
 
     <!-- 통합 백업 및 데이터 관리 모달 -->
@@ -196,15 +215,14 @@
         </div>
     </header>
 
-    <!-- 메인 컨텐츠 영역 -->
-    <main class="flex-grow w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <main class="flex-grow w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col min-h-0">
 
         <!-- [1] 메모장 탭 -->
-        <section id="tab-notepad" class="tab-content block">
-            <div class="bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden flex flex-col md:flex-row h-[800px]">
+        <section id="tab-notepad" class="tab-content flex flex-1 flex-col min-h-0">
+            <div class="bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden flex flex-col md:flex-row flex-1 min-h-0">
                 
                 <!-- 좌측 사이드바 -->
-                <div id="notepad-sidebar" class="w-full md:w-80 bg-zinc-950 border-r border-zinc-800 flex flex-col h-full shrink-0 transition-all duration-300 select-none">
+                <div id="notepad-sidebar" class="hidden w-full md:w-80 bg-zinc-950 border-r border-zinc-800 flex flex-col h-full shrink-0 transition-all duration-300 select-none">
                     <div class="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
                         <h2 class="font-bold text-zinc-400 flex items-center gap-2">
                             <span>📂</span> 내 메모 목록
@@ -226,7 +244,7 @@
                         
                         <!-- [목록 접기/펼치기] 툴바 고정 버튼 -->
                         <button onclick="toggleSidebarNotepad()" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 rounded-lg text-xs font-bold flex items-center gap-1 transition-all shrink-0">
-                            <span id="notepad-toggle-icon">◀</span> <span id="notepad-toggle-text">목록 접기</span>
+                            <span id="notepad-toggle-icon">▶</span> <span id="notepad-toggle-text">목록 펼치기</span>
                         </button>
 
                         <div class="h-6 w-px bg-zinc-800 mx-0.5"></div>
@@ -245,37 +263,7 @@
                             </div>
                         </div>
 
-                        <!-- 2. 커스텀 배경 스타일 스위처 -->
-                        <div class="relative" id="bg-dropdown-container">
-                            <button type="button" onmousedown="event.preventDefault()" onclick="toggleCustomDropdown('bg-dropdown-menu')" class="bg-zinc-800 text-yellow-400 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-bold hover:bg-zinc-700 focus:outline-none flex items-center gap-1 transition-colors">
-                                <span id="current-bg-label">배경</span>
-                                <span class="text-[9px] text-zinc-400">▼</span>
-                            </button>
-                            <div id="bg-dropdown-menu" class="hidden absolute left-0 mt-1.5 w-44 bg-zinc-900/95 border border-zinc-700 rounded-xl shadow-2xl z-50 py-1 backdrop-blur-md">
-                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomBg('plain')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">🌑 기본 어두운 배경</button>
-                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomBg('lined')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">📝 흰색 노트 배경</button>
-                            </div>
-                        </div>
-
-                        <!-- 3. 커스텀 줄간격 조절창 -->
-                        <div class="relative" id="lh-dropdown-container">
-                            <button type="button" onmousedown="event.preventDefault()" onclick="toggleCustomDropdown('lh-dropdown-menu')" class="bg-zinc-800 text-teal-400 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-bold hover:bg-zinc-700 focus:outline-none flex items-center gap-1 transition-colors">
-                                <span id="current-lh-label">줄간격</span>
-                                <span class="text-[9px] text-zinc-400">▼</span>
-                            </button>
-                            <div id="lh-dropdown-menu" class="hidden absolute left-0 mt-1.5 w-52 bg-zinc-900/95 border border-zinc-700 rounded-xl shadow-2xl z-50 py-1 max-h-60 overflow-y-auto backdrop-blur-md">
-                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('0.8')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 매우 좁게 (0.8배)</button>
-                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('1.0')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 좁게 (1.0배)</button>
-                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('1.2')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 조금 좁게 (1.2배)</button>
-                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('normal')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 보통</button>
-                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('1.5')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 1.5배</button>
-                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('1.8')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 1.8배</button>
-                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('2.0')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 2.0배</button>
-                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('2.5')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 2.5배</button>
-                            </div>
-                        </div>
-
-                        <!-- 4. 커스텀 글자 크기 조정 -->
+                        <!-- 2. 커스텀 글자 크기 조정 -->
                         <div class="relative" id="size-dropdown-container">
                             <button type="button" onmousedown="event.preventDefault()" onclick="toggleCustomDropdown('size-dropdown-menu')" class="bg-zinc-800 text-zinc-100 border border-zinc-700 rounded-lg px-3 py-1.5 text-xs font-semibold hover:bg-zinc-700 focus:outline-none flex items-center gap-1 transition-colors">
                                 <span id="current-size-label">크기</span>
@@ -293,6 +281,43 @@
                                 <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomSize('70', 'size-dropdown-menu')" class="w-full text-left px-4 py-1.5 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">70px</button>
                                 <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomSize('75', 'size-dropdown-menu')" class="w-full text-left px-4 py-1.5 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">75px</button>
                                 <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomSize('80', 'size-dropdown-menu')" class="w-full text-left px-4 py-1.5 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">80px</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomSize('85', 'size-dropdown-menu')" class="w-full text-left px-4 py-1.5 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">85px</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomSize('90', 'size-dropdown-menu')" class="w-full text-left px-4 py-1.5 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">90px</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomSize('95', 'size-dropdown-menu')" class="w-full text-left px-4 py-1.5 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">95px</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomSize('100', 'size-dropdown-menu')" class="w-full text-left px-4 py-1.5 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">100px</button>
+                            </div>
+                        </div>
+
+                        <!-- 3. 커스텀 줄간격 조절창 -->
+                        <div class="relative" id="lh-dropdown-container">
+                            <button type="button" onmousedown="event.preventDefault()" onclick="toggleCustomDropdown('lh-dropdown-menu')" class="bg-zinc-800 text-teal-400 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-bold hover:bg-zinc-700 focus:outline-none flex items-center gap-1 transition-colors">
+                                <span id="current-lh-label">줄간격</span>
+                                <span class="text-[9px] text-zinc-400">▼</span>
+                            </button>
+                            <div id="lh-dropdown-menu" class="hidden absolute left-0 mt-1.5 w-52 bg-zinc-900/95 border border-zinc-700 rounded-xl shadow-2xl z-50 py-1 max-h-60 overflow-y-auto backdrop-blur-md">
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('0.5', 'note-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 극좁게 (0.5배)</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('0.6', 'note-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 아주 좁게 (0.6배)</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('0.7', 'note-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 더 좁게 (0.7배)</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('0.8', 'note-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 매우 좁게 (0.8배)</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('1.0', 'note-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 좁게 (1.0배)</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('1.2', 'note-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 조금 좁게 (1.2배)</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('normal', 'note-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 보통</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('1.5', 'note-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 1.5배</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('1.8', 'note-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 1.8배</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('2.0', 'note-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 2.0배</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('2.5', 'note-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">줄간격: 2.5배</button>
+                            </div>
+                        </div>
+
+                        <!-- 4. 커스텀 배경 스타일 스위처 -->
+                        <div class="relative" id="bg-dropdown-container">
+                            <button type="button" onmousedown="event.preventDefault()" onclick="toggleCustomDropdown('bg-dropdown-menu')" class="bg-zinc-800 text-yellow-400 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-bold hover:bg-zinc-700 focus:outline-none flex items-center gap-1 transition-colors">
+                                <span id="current-bg-label">배경</span>
+                                <span class="text-[9px] text-zinc-400">▼</span>
+                            </button>
+                            <div id="bg-dropdown-menu" class="hidden absolute left-0 mt-1.5 w-44 bg-zinc-900/95 border border-zinc-700 rounded-xl shadow-2xl z-50 py-1 backdrop-blur-md">
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomBg('plain')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">🌑 기본 어두운 배경</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomBg('lined')" class="w-full text-left px-4 py-2 text-xs hover:bg-blue-600 hover:text-white text-zinc-200 transition-colors">📝 흰색 노트 배경</button>
                             </div>
                         </div>
 
@@ -305,12 +330,13 @@
                         <!-- 텍스트 색상 -->
                         <div class="flex items-center gap-1" title="글자 색상">
                             <span class="text-[10px] text-zinc-500 font-bold">T</span>
+                            <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#000000')" class="w-4 h-4 rounded-full bg-black border border-zinc-600" title="검정"></button>
                             <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#FFFFFF')" class="w-4 h-4 rounded-full bg-white border border-zinc-600"></button>
                             <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#FFBE98')" class="w-4 h-4 rounded-full bg-[#FFBE98] border border-zinc-600"></button>
                             <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#F5DF4D')" class="w-4 h-4 rounded-full bg-[#F5DF4D] border border-zinc-600"></button>
                             <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#FF6F61')" class="w-4 h-4 rounded-full bg-[#FF6F61] border border-zinc-600"></button>
-                            <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#8B5CF6')" class="w-4 h-4 rounded-full bg-violet-500 border border-zinc-600"></button>
-                            <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#3B82F6')" class="w-4 h-4 rounded-full bg-blue-500 border border-zinc-600"></button>
+                            <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#A78BFA')" class="w-4 h-4 rounded-full bg-violet-400 border border-zinc-600"></button>
+                            <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#60A5FA')" class="w-4 h-4 rounded-full bg-blue-400 border border-zinc-600"></button>
                         </div>
 
                         <div class="h-6 w-px bg-zinc-800 mx-0.5"></div>
@@ -330,7 +356,8 @@
                         <div class="flex items-center gap-1.5 ml-auto">
                             <button onclick="undoNotepadDrawing()" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold" title="되돌리기">↩️</button>
                             <button onclick="redoNotepadDrawing()" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold" title="다시실행">↪️</button>
-                            <button onclick="clearNotepadAllCanvas()" class="p-1.5 bg-rose-950 hover:bg-rose-900 border border-rose-900 text-rose-300 rounded-lg text-xs font-bold" title="모든 그림 및 판서 일괄 청소">🧹 지우기</button>
+                            <button onclick="clearNotepadAllCanvasWithConfirm()" class="p-1.5 bg-rose-950 hover:bg-rose-900 border border-rose-900 text-rose-300 rounded-lg text-xs font-bold" title="모든 그림 및 판서 일괄 청소">🧹 지우기</button>
+                            <button onclick="openEditorFullscreen('notepad')" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold" title="전체화면">⛶</button>
                         </div>
                     </div>
 
@@ -404,37 +431,26 @@
                     <!-- 에디터 & 투명 캔버스 레이어 결합 보디 -->
                     <div class="flex-grow flex flex-col p-6 overflow-hidden relative transition-all duration-300" id="notepad-workspace">
                         
-                        <!-- 제목 영역 -->
-                        <input id="note-title-input" type="text" placeholder="제목을 입력하세요" class="w-full text-3xl font-extrabold text-zinc-100 bg-transparent border-b border-zinc-800 pb-3 mb-5 focus:outline-none focus:border-blue-500 transition-all z-10 relative">
-                        
                         <!-- 스크롤 가능한 에디터 기단부 컨테이너 -->
-                        <div class="flex-grow w-full relative overflow-y-auto" id="editor-scroller" style="min-height: 250px;">
+                        <div class="flex-grow w-full relative overflow-y-auto min-h-0" id="editor-scroller">
                             
                             <!-- [하이브리드 텍스트 에디터 레이어] (30px~80px 커스텀 크기로 가동) -->
-                            <div id="note-editor" contenteditable="true" class="w-full focus:outline-none text-zinc-100 leading-relaxed text-4xl font-bold font-sans relative z-10 min-h-[500px] select-text" placeholder="이곳에 메모를 자유롭게 입력하세요. 펜이나 도형 툴을 선택하여 직접 판서나 드로잉을 할 수도 있습니다."></div>
+                            <div id="note-editor" contenteditable="true" class="w-full h-full min-h-full focus:outline-none text-zinc-100 leading-relaxed text-4xl font-bold font-sans relative z-10 select-text"></div>
                             
                             <!-- [투명 무한 드로잉 캔버스 오버레이 레이어] -->
                             <canvas id="note-canvas" class="absolute top-0 left-0 w-full h-full z-20 pointer-events-none"></canvas>
                         </div>
-                    </div>
-                    
-                    <!-- 저장 알림 하단바 -->
-                    <div class="px-6 py-3 bg-zinc-950 border-t border-zinc-800 text-xs text-zinc-500 flex justify-between items-center select-none">
-                        <span id="note-word-count">공백 제외: 0자</span>
-                        <span id="note-save-status" class="text-emerald-400 font-medium flex items-center gap-1">
-                            <span class="inline-block w-1.5 h-1.5 bg-emerald-400 rounded-full"></span> 로컬 스토리지 자동 저장됨
-                        </span>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- [2] 알림장 탭 -->
-        <section id="tab-notice" class="tab-content hidden">
-            <div class="bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden flex flex-col md:flex-row h-[800px]">
+        <section id="tab-notice" class="tab-content hidden flex-1 flex-col min-h-0">
+            <div class="bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden flex flex-col md:flex-row flex-1 min-h-0">
                 
                 <!-- 좌측 사이드바 -->
-                <div id="notice-sidebar" class="w-full md:w-80 bg-zinc-950 border-r border-zinc-800 flex flex-col h-full shrink-0 transition-all duration-300 select-none">
+                <div id="notice-sidebar" class="hidden w-full md:w-80 bg-zinc-950 border-r border-zinc-800 flex flex-col h-full shrink-0 transition-all duration-300 select-none">
                     <div class="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
                         <h2 class="font-bold text-zinc-400 flex items-center gap-2">
                             <span>📅</span> 역대 알림장 목록
@@ -456,7 +472,7 @@
                         
                         <!-- [목록 접기/펼치기] 툴바 고정 버튼 -->
                         <button onclick="toggleSidebarNotice()" class="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 rounded-lg text-xs font-bold flex items-center gap-1 transition-all shrink-0">
-                            <span id="notice-toggle-icon">◀</span> <span id="notice-toggle-text">목록 접기</span>
+                            <span id="notice-toggle-icon">▶</span> <span id="notice-toggle-text">목록 펼치기</span>
                         </button>
 
                         <div class="h-6 w-px bg-zinc-800 mx-0.5"></div>
@@ -496,6 +512,27 @@
                             </div>
                         </div>
 
+                        <!-- 3. 알림장 줄간격 조절창 -->
+                        <div class="relative" id="notice-lh-dropdown-container">
+                            <button type="button" onmousedown="event.preventDefault()" onclick="toggleCustomDropdown('notice-lh-dropdown-menu')" class="bg-zinc-800 text-teal-400 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs font-bold hover:bg-zinc-700 focus:outline-none flex items-center gap-1 transition-colors">
+                                <span id="notice-current-lh-label">줄간격</span>
+                                <span class="text-[9px] text-zinc-400">▼</span>
+                            </button>
+                            <div id="notice-lh-dropdown-menu" class="hidden absolute left-0 mt-1.5 w-52 bg-zinc-900/95 border border-zinc-700 rounded-xl shadow-2xl z-50 py-1 max-h-60 overflow-y-auto backdrop-blur-md">
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('0.5', 'notice-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-indigo-600 hover:text-white text-zinc-200 transition-colors">줄간격: 극좁게 (0.5배)</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('0.6', 'notice-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-indigo-600 hover:text-white text-zinc-200 transition-colors">줄간격: 아주 좁게 (0.6배)</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('0.7', 'notice-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-indigo-600 hover:text-white text-zinc-200 transition-colors">줄간격: 더 좁게 (0.7배)</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('0.8', 'notice-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-indigo-600 hover:text-white text-zinc-200 transition-colors">줄간격: 매우 좁게 (0.8배)</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('1.0', 'notice-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-indigo-600 hover:text-white text-zinc-200 transition-colors">줄간격: 좁게 (1.0배)</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('1.2', 'notice-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-indigo-600 hover:text-white text-zinc-200 transition-colors">줄간격: 조금 좁게 (1.2배)</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('normal', 'notice-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-indigo-600 hover:text-white text-zinc-200 transition-colors">줄간격: 보통</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('1.5', 'notice-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-indigo-600 hover:text-white text-zinc-200 transition-colors">줄간격: 1.5배</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('1.8', 'notice-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-indigo-600 hover:text-white text-zinc-200 transition-colors">줄간격: 1.8배</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('2.0', 'notice-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-indigo-600 hover:text-white text-zinc-200 transition-colors">줄간격: 2.0배</button>
+                                <button type="button" onmousedown="event.preventDefault()" onclick="selectCustomLh('2.5', 'notice-editor')" class="w-full text-left px-4 py-2 text-xs hover:bg-indigo-600 hover:text-white text-zinc-200 transition-colors">줄간격: 2.5배</button>
+                            </div>
+                        </div>
+
                         <div class="h-6 w-px bg-zinc-800 mx-0.5"></div>
 
                         <!-- 서식 제어 -->
@@ -507,18 +544,18 @@
                         <!-- 텍스트 색상 -->
                         <div class="flex items-center gap-1 shrink-0 pr-2">
                             <span class="text-[10px] text-zinc-400 font-bold mr-1">T</span>
+                            <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#000000')" class="w-4 h-4 rounded-full bg-black border border-zinc-600" title="검정"></button>
                             <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#FFFFFF')" class="w-4 h-4 rounded-full bg-white border border-zinc-600" title="화이트"></button>
                             <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#FFBE98')" class="w-4 h-4 rounded-full bg-[#FFBE98] border border-zinc-600" title="피치퍼즈"></button>
                             <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#F5DF4D')" class="w-4 h-4 rounded-full bg-[#F5DF4D] border border-zinc-600" title="일루미네이팅 옐로우"></button>
                             <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#FF6F61')" class="w-4 h-4 rounded-full bg-[#FF6F61] border border-zinc-600" title="리빙코랄"></button>
-                            <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#8B5CF6')" class="w-4 h-4 rounded-full bg-purple-500 border border-zinc-600" title="배리페리"></button>
-                            <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#3B82F6')" class="w-4 h-4 rounded-full bg-blue-500 border border-zinc-600" title="클래식 블루"></button>
+                            <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#A78BFA')" class="w-4 h-4 rounded-full bg-violet-400 border border-zinc-600" title="배리페리"></button>
+                            <button onmousedown="event.preventDefault()" onclick="formatDoc('foreColor', '#60A5FA')" class="w-4 h-4 rounded-full bg-blue-400 border border-zinc-600" title="클래식 블루"></button>
                         </div>
                         
                         <div class="h-6 w-px bg-zinc-800 mx-0.5"></div>
 
-                        <!-- 프린트 및 다운로드 컨트롤러 -->
-                        <button onclick="printCurrentDocument()" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold" title="현재 알림장 인쇄 / PDF 저장">🖨️ 알림장 출력</button>
+                        <button onclick="openEditorFullscreen('notice')" class="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs font-bold" title="전체화면">⛶</button>
                     </div>
 
                     <!-- 오늘 날짜 및 헤더 -->
@@ -530,17 +567,9 @@
                     </div>
 
                     <!-- 에디터 바디 -->
-                    <div class="flex-grow flex flex-col p-6 overflow-y-auto bg-zinc-950/20">
+                    <div class="flex-grow flex flex-col p-6 overflow-hidden bg-zinc-950/20 min-h-0">
                         <input id="notice-title-input" type="hidden">
-                        <div id="notice-editor" contenteditable="true" class="flex-grow w-full focus:outline-none min-h-[300px] text-zinc-100 leading-relaxed text-4xl font-bold font-sans bg-zinc-950/30 rounded-2xl p-6 border border-zinc-800 shadow-inner select-text" placeholder="알림장 내용들을 이곳에 자유롭고 큼직하게 기록해 보세요."></div>
-                    </div>
-
-                    <!-- 하단바 -->
-                    <div class="px-6 py-3 bg-zinc-950 border-t border-zinc-800 text-xs text-zinc-500 flex justify-between items-center select-none">
-                        <span id="notice-word-count">공백 제외: 0자</span>
-                        <span id="notice-save-status" class="text-indigo-400 font-medium flex items-center gap-1">
-                            <span class="inline-block w-1.5 h-1.5 bg-indigo-400 rounded-full"></span> 로컬 스토리지 자동 저장됨
-                        </span>
+                        <div id="notice-editor" contenteditable="true" class="flex-grow w-full h-full min-h-0 focus:outline-none text-zinc-100 leading-relaxed text-4xl font-bold font-sans bg-zinc-950/30 rounded-2xl p-6 border border-zinc-800 shadow-inner select-text overflow-y-auto"></div>
                     </div>
                 </div>
             </div>
@@ -661,34 +690,34 @@
 
         <!-- [4] 랜덤뽑기 탭 -->
         <section id="tab-picker" class="tab-content hidden">
-            <div class="flex flex-col gap-6">
+            <div class="bg-zinc-900 rounded-3xl shadow-2xl border border-zinc-800 overflow-hidden flex flex-col md:flex-row min-h-[800px]">
 
-                <!-- 상단 가로형 메뉴 설정창 -->
-                <div class="bg-zinc-900 p-4 rounded-3xl border border-zinc-800 shadow-xl select-none">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div class="flex items-center gap-2 text-zinc-100 font-bold text-base shrink-0">
+                <!-- 좌측 인덱스 메뉴 -->
+                <div id="picker-sidebar" class="w-full md:w-56 bg-zinc-950 border-r border-zinc-800 flex flex-col shrink-0 select-none">
+                    <div class="p-4 border-b border-zinc-800">
+                        <h2 class="font-bold text-zinc-400 flex items-center gap-2 text-sm">
                             <span>⚙️</span> 메뉴 설정
-                        </div>
-                        <div class="flex flex-wrap gap-2 flex-grow justify-start md:justify-end">
-                            <button onclick="switchPickerSubmenu('picker-individual')" id="sub-picker-individual" class="submenu-btn px-5 py-2.5 rounded-2xl text-sm font-extrabold transition-all bg-blue-950/60 text-blue-400 border border-blue-900/40">
-                                👤 개인 랜덤 뽑기
-                            </button>
-                            <button onclick="switchPickerSubmenu('picker-group')" id="sub-picker-group" class="submenu-btn px-5 py-2.5 rounded-2xl text-sm font-extrabold text-zinc-400 hover:bg-zinc-800 transition-all">
-                                👥 모둠 랜덤 뽑기
-                            </button>
-                            <button onclick="switchPickerSubmenu('picker-manage')" id="sub-picker-manage" class="submenu-btn px-5 py-2.5 rounded-2xl text-sm font-extrabold text-zinc-400 hover:bg-zinc-800 transition-all flex items-center gap-2">
-                                <span>📋 학생 명단 관리</span>
-                                <span id="students-badge-count" class="bg-zinc-800 text-zinc-300 text-xs px-2.5 py-0.5 rounded-full font-bold">10명</span>
-                            </button>
-                        </div>
+                        </h2>
                     </div>
+                    <nav class="flex flex-col p-3 space-y-2 flex-grow">
+                        <button onclick="switchPickerSubmenu('picker-individual')" id="sub-picker-individual" class="submenu-btn w-full text-left px-4 py-3 rounded-xl text-sm font-extrabold transition-all bg-blue-950/60 text-blue-400 border border-blue-900/40">
+                            👤 개인 랜덤 뽑기
+                        </button>
+                        <button onclick="switchPickerSubmenu('picker-group')" id="sub-picker-group" class="submenu-btn w-full text-left px-4 py-3 rounded-xl text-sm font-extrabold text-zinc-400 hover:bg-zinc-800 transition-all">
+                            👥 모둠 랜덤 뽑기
+                        </button>
+                        <button onclick="switchPickerSubmenu('picker-manage')" id="sub-picker-manage" class="submenu-btn w-full text-left px-4 py-3 rounded-xl text-sm font-extrabold text-zinc-400 hover:bg-zinc-800 transition-all flex items-center justify-between gap-2">
+                            <span>📋 학생 명단 관리</span>
+                            <span id="students-badge-count" class="bg-zinc-800 text-zinc-300 text-xs px-2 py-0.5 rounded-full font-bold shrink-0">10명</span>
+                        </button>
+                    </nav>
                 </div>
 
-                <!-- 하단: 메인 실시간 거대 작업판 -->
-                <div class="w-full">
+                <!-- 우측 메인 작업판 -->
+                <div class="flex-grow overflow-y-auto p-4 md:p-6">
 
                     <!-- 서브탭 1: 개인 랜덤 뽑기 -->
-                    <div id="view-picker-individual" class="picker-submenu-view block bg-zinc-900 rounded-3xl shadow-xl border border-zinc-800 p-8 space-y-6 min-h-[550px]">
+                    <div id="view-picker-individual" class="picker-submenu-view block space-y-6 min-h-[550px]">
                         <div class="border-b border-zinc-800 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                             <div class="select-none">
                                 <h3 class="text-xl font-bold text-zinc-50 flex items-center gap-2">
@@ -737,7 +766,7 @@
                     </div>
 
                     <!-- 서브탭 2: 모둠 랜덤 뽑기 -->
-                    <div id="view-picker-group" class="picker-submenu-view hidden bg-zinc-900 rounded-3xl shadow-xl border border-zinc-800 p-8 space-y-6 min-h-[550px]">
+                    <div id="view-picker-group" class="picker-submenu-view hidden space-y-6 min-h-[550px]">
                         <div class="border-b border-zinc-800 pb-4 select-none">
                             <h3 class="text-xl font-bold text-zinc-50 flex items-center gap-2">
                                 <span>👥</span> 모둠 랜덤 뽑기
@@ -753,7 +782,7 @@
                                 2. 모둠 순서 결정하기
                             </button>
                             <button onclick="setGroupToolMode('create')" id="btn-group-create" class="group-tool-btn py-3 rounded-xl text-xs font-black text-zinc-400 hover:bg-zinc-800 transition-all">
-                                3. 자동 모둠 빌더 (남녀균등)
+                                3. 자동 모둠 빌더
                             </button>
                         </div>
 
@@ -810,7 +839,7 @@
                             <div class="flex flex-wrap items-center justify-between gap-3 bg-indigo-950/30 border border-indigo-900/40 p-4 rounded-2xl select-none">
                                 <div class="flex items-center gap-2">
                                     <span class="text-sm font-bold text-zinc-200">순서 정할 모둠 수:</span>
-                                    <select id="group-order-total" class="bg-zinc-800 text-zinc-100 border border-zinc-700 rounded-lg px-3 py-1.5 font-bold focus:outline-none">
+                                    <select id="group-order-total" onchange="initGroupOrderDisplay()" class="bg-zinc-800 text-zinc-100 border border-zinc-700 rounded-lg px-3 py-1.5 font-bold focus:outline-none">
                                         <option value="2">2 모둠</option>
                                         <option value="3">3 모둠</option>
                                         <option value="4" selected>4 모둠</option>
@@ -826,9 +855,11 @@
                             </div>
 
                             <div class="bg-zinc-950 border border-zinc-800 rounded-2xl p-6 select-none">
-                                <h4 class="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-4 text-center">배정 완료된 순서 판넬</h4>
-                                <div id="group-order-results" class="grid grid-cols-1 gap-2 max-w-sm mx-auto">
-                                    <p class="text-zinc-500 text-center text-sm py-4">위의 추첨 버튼을 클릭하세요.</p>
+                                <div id="group-order-results" class="flex flex-wrap justify-center gap-4"></div>
+                                <div class="flex justify-center mt-5">
+                                    <button id="btn-reset-group-order" onclick="resetGroupOrder()" class="hidden px-6 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-bold rounded-xl text-xs border border-zinc-700 transition-all">
+                                        🔄 초기화
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -852,9 +883,14 @@
                                         <label for="gender-balance-checkbox" class="text-xs font-bold text-zinc-300 cursor-pointer select-none">남녀 성별 균등 배정</label>
                                     </div>
                                 </div>
-                                <button onclick="buildAutomaticGroups()" class="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm rounded-xl shadow transition-all select-none">
-                                    🎲 명단 무작위 모둠 조합 실행
-                                </button>
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <button onclick="buildAutomaticGroups()" class="flex-grow py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm rounded-xl shadow transition-all select-none">
+                                        🎲 명단 무작위 모둠 조합 실행
+                                    </button>
+                                    <button id="btn-group-make-fullscreen" onclick="openGroupMakeFullscreen()" class="hidden px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl shadow transition-all select-none shrink-0">
+                                        🔍 크게 보기
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- 결과물 카드 그리드 영역 -->
@@ -866,7 +902,7 @@
                     </div>
 
                     <!-- 서브탭 3: 학생 명단 관리 -->
-                    <div id="view-picker-manage" class="picker-submenu-view hidden bg-zinc-900 rounded-3xl shadow-xl border border-zinc-800 p-8 space-y-6">
+                    <div id="view-picker-manage" class="picker-submenu-view hidden space-y-6">
                         <div class="border-b border-zinc-800 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 select-none">
                             <div>
                                 <h3 class="text-xl font-bold text-zinc-50 flex items-center gap-2">
@@ -891,13 +927,13 @@
                                     <div class="space-y-3">
                                         <div>
                                             <label class="text-[11px] text-zinc-400 font-bold block mb-1 select-none">학생 이름</label>
-                                            <input id="new-stud-name" type="text" placeholder="이름 입력" class="w-full bg-zinc-900 text-zinc-100 border border-zinc-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <input id="new-stud-name" type="text" placeholder="이름 입력" onkeydown="if(event.key==='Enter'){event.preventDefault();addSingleStudent();}" class="w-full bg-zinc-900 text-zinc-100 border border-zinc-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                         </div>
                                         <div>
                                             <label class="text-[11px] text-zinc-400 font-bold block mb-1 select-none">성별</label>
                                             <div class="grid grid-cols-2 gap-2 select-none">
-                                                <button onclick="setQuickGender('M')" id="gender-m-btn" class="py-2 rounded-xl text-xs font-extrabold bg-blue-950/60 border border-blue-900 text-blue-400 transition-all">남학생 ♂</button>
-                                                <button onclick="setQuickGender('F')" id="gender-f-btn" class="py-2 rounded-xl text-xs font-extrabold bg-zinc-900 border border-zinc-800 text-zinc-400 transition-all">여학생 ♀</button>
+                                                <button onclick="setQuickGender('M')" id="gender-m-btn" class="py-2 rounded-xl text-xs font-extrabold bg-blue-950/60 border border-blue-900 text-blue-400 transition-all">남학생</button>
+                                                <button onclick="setQuickGender('F')" id="gender-f-btn" class="py-2 rounded-xl text-xs font-extrabold bg-zinc-900 border border-zinc-800 text-zinc-400 transition-all">여학생</button>
                                             </div>
                                         </div>
                                         <button onclick="addSingleStudent()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow transition-all select-none">
@@ -909,13 +945,20 @@
                                 <!-- 일괄 등록창 -->
                                 <div class="bg-zinc-950 p-5 rounded-2xl border border-zinc-800 space-y-2">
                                     <h4 class="text-xs font-bold text-zinc-300 flex justify-between select-none">
-                                        <span>⚡ 다량 학생 일괄 등록</span>
+                                        <span>⚡ 일괄 등록</span>
                                         <span class="text-[10px] text-zinc-500 font-normal">줄바꿈 또는 쉼표(,)로 구분</span>
                                     </h4>
                                     <textarea id="bulk-names-input" rows="4" placeholder="홍길동, 임꺽정, 성춘향, 이몽룡" class="w-full bg-zinc-900 text-zinc-100 border border-zinc-800 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                                     <button onclick="addBulkStudents()" class="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold rounded-xl text-xs border border-zinc-700 transition-all select-none">
                                         일괄 추가 실행
                                     </button>
+                                </div>
+
+                                <!-- 일괄 등록 후 성별 선택 -->
+                                <div id="bulk-gender-panel" class="hidden bg-zinc-950 p-5 rounded-2xl border border-zinc-800 space-y-3">
+                                    <h4 class="text-xs font-bold text-zinc-300 select-none">성별 선택</h4>
+                                    <p class="text-[10px] text-zinc-500 select-none">일괄 등록된 학생의 성별을 선택해 주세요.</p>
+                                    <div id="bulk-gender-list" class="space-y-2 max-h-48 overflow-y-auto"></div>
                                 </div>
                             </div>
 
@@ -1024,7 +1067,9 @@
         let currentGroupToolMode = 'pick';
         let pickedGroupNums = new Set();
         let totalGroupCount = 4;
-
+        let groupOrderIntervalId = null;
+        let groupMakeShuffleIntervalId = null;
+        let lastBuiltGroups = null;
 
         /*************************************************************
          * [하이브리드 화이트보드 캔버스 시스템 전역 변수 및 초기화]
@@ -1105,7 +1150,7 @@
             const scroller = document.getElementById('editor-scroller');
             if (scroller) {
                 canvas.width = scroller.clientWidth;
-                canvas.height = Math.max(scroller.scrollHeight, 600);
+                canvas.height = Math.max(scroller.scrollHeight, scroller.clientHeight, 600);
                 redrawAllCanvas();
             }
         }
@@ -1181,17 +1226,11 @@
         function changeNotepadBackground(mode) {
             const workspace = document.getElementById('notepad-workspace');
             const editor = document.getElementById('note-editor');
-            const titleInput = document.getElementById('note-title-input');
             if (!editor || !workspace) return;
 
             if (mode === 'lined') {
                 workspace.style.backgroundColor = '#ffffff';
-                editor.style.color = '#18181b';
-                if (titleInput) {
-                    titleInput.style.color = '#18181b';
-                    titleInput.classList.remove('border-zinc-800');
-                    titleInput.classList.add('border-zinc-300');
-                }
+                editor.style.color = '#000000';
                 editor.classList.add('lined-light-bg');
                 
                 let activeSize = parseInt(editor.style.fontSize) || 36;
@@ -1205,11 +1244,6 @@
             } else {
                 workspace.style.backgroundColor = '';
                 editor.style.color = '';
-                if (titleInput) {
-                    titleInput.style.color = '';
-                    titleInput.classList.remove('border-zinc-300');
-                    titleInput.classList.add('border-zinc-800');
-                }
                 editor.classList.remove('lined-light-bg');
                 editor.style.backgroundSize = '';
                 if (!editor.style.fontSize) {
@@ -1227,12 +1261,23 @@
         }
 
         // 줄간격 조절 기능
-        function changeLineHeight(value) {
-            const editor = document.getElementById('note-editor');
+        function changeLineHeight(value, editorId = 'note-editor') {
+            const editor = document.getElementById(editorId);
             if (!editor) return;
 
             applyLineHeightAndLines(editor, value);
-            triggerNotepadSave();
+
+            if (editorId === 'note-editor') {
+                triggerNotepadSave();
+            } else if (editorId === 'notice-editor' && activeNoticeId) {
+                const notice = notices.find(n => n.id === activeNoticeId);
+                if (notice) {
+                    notice.lineHeight = editor.style.lineHeight || '';
+                    notice.updatedAt = new Date().toISOString();
+                    saveNoticesToStorage();
+                }
+            }
+
             if (!isInitialLoad) {
                 showToast(`줄간격이 ${value === 'normal' ? '보통' : value + '배'}로 변경되었습니다.`);
             }
@@ -1246,15 +1291,18 @@
             if (value === 'normal') {
                 const computedLineHeight = Math.round(activeSize * 1.6);
                 editor.style.lineHeight = `${computedLineHeight}px`;
-                editor.style.backgroundSize = `100% ${computedLineHeight}px`;
+                if (editor.classList.contains('lined-light-bg')) {
+                    editor.style.backgroundSize = `100% ${computedLineHeight}px`;
+                }
             } else {
                 const multiplier = parseFloat(value);
                 const computedLineHeight = Math.round(activeSize * multiplier * 1.6);
-                editor.style.backgroundSize = `100% ${computedLineHeight}px`;
                 editor.style.lineHeight = `${computedLineHeight}px`;
+                if (editor.classList.contains('lined-light-bg')) {
+                    editor.style.backgroundSize = `100% ${computedLineHeight}px`;
+                }
             }
         }
-
 
         /*************************************************************
          * 캔버스 드로잉 & 정밀 벡터 엔진 구현
@@ -1634,6 +1682,34 @@
             ctx.closePath();
         }
 
+        function deleteSelectedCanvasElement() {
+            if (!selectedElement || currentTool !== 'select' || currentTabId !== 'tab-notepad') return false;
+
+            saveDrawingState();
+            drawingShapes = drawingShapes.filter(s => s.id !== selectedElement.id);
+            selectedElement = null;
+            redrawAllCanvas();
+            triggerNotepadSave();
+            return true;
+        }
+
+        function handleNotepadCanvasKeydown(e) {
+            if (currentTabId !== 'tab-notepad') return;
+            if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+            if (currentTool !== 'select' || !selectedElement) return;
+
+            const noteEditor = document.getElementById('note-editor');
+            const sel = window.getSelection();
+            if (sel && !sel.isCollapsed && noteEditor && noteEditor.contains(sel.anchorNode)) {
+                return;
+            }
+
+            const active = document.activeElement;
+            if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+
+            e.preventDefault();
+            deleteSelectedCanvasElement();
+        }
 
         /*************************************************************
          * 실행 취소(Undo) / 다시 실행(Redo) 상태 보존 제어
@@ -1713,14 +1789,12 @@
                     saveDrawingState();
                     drawingShapes = [];
                     document.getElementById('note-editor').innerHTML = '';
-                    document.getElementById('note-title-input').value = '무제 메모';
                     redrawAllCanvas();
                     triggerNotepadSave();
                     showToast('화이트보드가 완전히 백지화되었습니다.');
                 }
             );
         }
-
 
         /*************************************************************
          * 외부 그래픽 리소스 (그림 삽입) 적재 시스템
@@ -1796,10 +1870,14 @@
             if (pendingCount === 0 && callback) callback();
         }
 
-
         /*************************************************************
          * [1] 메모장 핵심 로직
          *************************************************************/
+        function getNoteTitleFromContent(html) {
+            const text = (html || '').replace(/<[^>]*>/g, '').trim();
+            return text.substring(0, 30) || '무제 메모';
+        }
+
         function saveNotesToStorage() {
             safeStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes));
         }
@@ -1838,7 +1916,6 @@
             if (!targetNote) return;
 
             const noteEditor = document.getElementById('note-editor');
-            document.getElementById('note-title-input').value = targetNote.title || '';
             noteEditor.innerHTML = targetNote.content || '';
 
             noteEditor.style.fontSize = targetNote.fontSize || '';
@@ -1918,7 +1995,6 @@
                             selectNote(notes[0].id);
                         } else {
                             activeNoteId = null;
-                            document.getElementById('note-title-input').value = '';
                             document.getElementById('note-editor').innerHTML = '';
                             drawingShapes = [];
                             redrawAllCanvas();
@@ -1931,14 +2007,17 @@
             );
         }
 
-
         /*************************************************************
          * [2] 알림장 핵심 로직
          *************************************************************/
-        function initNoticeDate() {
+        function getTodayNoticeDateText() {
             const now = new Date();
             const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
-            const dateStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 (${days[now.getDay()]})`;
+            return `${now.getMonth() + 1}월 ${now.getDate()}일 ${days[now.getDay()]}`;
+        }
+
+        function initNoticeDate() {
+            const dateStr = getTodayNoticeDateText();
             const dateDisplay = document.getElementById('notice-today-date');
             if (dateDisplay) {
                 dateDisplay.innerText = dateStr;
@@ -1995,6 +2074,7 @@
             renderNoticeList();
             updateWordCount('notice-editor', 'notice-word-count');
             updateDropdownLabelsFromActive('notice-editor');
+            initNoticeDate();
         }
 
         function selectDefaultNotice() {
@@ -2053,20 +2133,17 @@
             );
         }
 
-
         /*************************************************************
          * [에디터 연동부] 글자 자수 카운팅 및 자동 디바운싱 저장 장치
          *************************************************************/
         function triggerNotepadSave() {
             if (!activeNoteId) return;
             const note = notes.find(n => n.id === activeNoteId);
-            const noteTitle = document.getElementById('note-title-input');
             const noteEditor = document.getElementById('note-editor');
-            const saveStatusNote = document.getElementById('note-save-status');
 
             if (note) {
-                note.title = noteTitle.value;
                 note.content = noteEditor.innerHTML;
+                note.title = getNoteTitleFromContent(note.content);
                 note.canvasData = JSON.stringify(drawingShapes);
                 note.bgMode = noteEditor.classList.contains('lined-light-bg') ? 'lined' : 'plain';
                 note.fontSize = noteEditor.style.fontSize || '';
@@ -2075,32 +2152,20 @@
                 note.updatedAt = new Date().toISOString();
                 saveNotesToStorage();
                 renderNotepadList();
-                updateWordCount('note-editor', 'note-word-count');
-
-                saveStatusNote.innerHTML = '<span class="inline-block w-1.5 h-1.5 bg-emerald-400 rounded-full"></span> 로컬 스토리지 자동 저장됨';
-                saveStatusNote.className = "text-emerald-400 font-medium flex items-center gap-1";
             }
         }
 
         function setupAutoSaveListeners() {
-            const noteTitle = document.getElementById('note-title-input');
             const noteEditor = document.getElementById('note-editor');
-            const saveStatusNote = document.getElementById('note-save-status');
 
             const triggerNoteTyping = () => {
-                if (saveStatusNote) {
-                    saveStatusNote.innerHTML = '<span class="inline-block w-1.5 h-1.5 bg-amber-400 rounded-full animate-ping"></span> 실시간 저장 중...';
-                    saveStatusNote.className = "text-amber-400 font-medium flex items-center gap-1";
-                }
                 debouncedSave(triggerNotepadSave, 600);
             };
 
-            if (noteTitle) noteTitle.addEventListener('input', triggerNoteTyping);
             if (noteEditor) noteEditor.addEventListener('input', triggerNoteTyping);
 
             const noticeTitle = document.getElementById('notice-title-input');
             const noticeEditor = document.getElementById('notice-editor');
-            const saveStatusNotice = document.getElementById('notice-save-status');
 
             const performNoticeSave = () => {
                 if (!activeNoticeId) return;
@@ -2114,18 +2179,10 @@
                     notice.updatedAt = new Date().toISOString();
                     saveNoticesToStorage();
                     renderNoticeList();
-                    updateWordCount('notice-editor', 'notice-word-count');
-
-                    saveStatusNotice.innerHTML = '<span class="inline-block w-1.5 h-1.5 bg-indigo-400 rounded-full"></span> 로컬 스토리지 자동 저장됨';
-                    saveStatusNotice.className = "text-indigo-400 font-medium flex items-center gap-1";
                 }
             };
 
             const triggerNoticeTyping = () => {
-                if (saveStatusNotice) {
-                    saveStatusNotice.innerHTML = '<span class="inline-block w-1.5 h-1.5 bg-amber-400 rounded-full animate-ping"></span> 실시간 저장 중...';
-                    saveStatusNotice.className = "text-indigo-400 font-medium flex items-center gap-1";
-                }
                 debouncedSave(performNoticeSave, 600);
             };
 
@@ -2284,12 +2341,6 @@
             countDisplay.innerText = `공백 제외: ${cleanText.length}자`;
         }
 
-        // 브라우저 기본 인쇄 화면으로 뿜어내기
-        function printCurrentDocument() {
-            window.print();
-        }
-
-
         /*************************************************************
          * [커스텀 드롭다운 탭 전용 가동 기구]
          *************************************************************/
@@ -2300,7 +2351,8 @@
             const allMenus = [
                 'font-dropdown-menu', 'size-dropdown-menu', 
                 'bg-dropdown-menu', 'lh-dropdown-menu', 
-                'notice-font-dropdown-menu', 'notice-size-dropdown-menu'
+                'notice-font-dropdown-menu', 'notice-size-dropdown-menu',
+                'notice-lh-dropdown-menu'
             ];
             allMenus.forEach(id => {
                 if (id !== menuId) {
@@ -2339,13 +2391,14 @@
             updateDropdownLabelsFromActive('note-editor');
         }
 
-        function selectCustomLh(value) {
-            changeLineHeight(value);
+        function selectCustomLh(value, editorId = 'note-editor') {
+            changeLineHeight(value, editorId);
             
-            const menu = document.getElementById('lh-dropdown-menu');
+            const menuId = editorId === 'notice-editor' ? 'notice-lh-dropdown-menu' : 'lh-dropdown-menu';
+            const menu = document.getElementById(menuId);
             if (menu) menu.classList.add('hidden');
             
-            updateDropdownLabelsFromActive('note-editor');
+            updateDropdownLabelsFromActive(editorId);
         }
 
         // 활성화 스타일 기준 커스텀 레이블 동기화 메커니즘
@@ -2354,7 +2407,6 @@
             // 동적으로 텍스트를 업데이트하여 길어지게 만드는 기존 로직을 제거합니다.
             // 버튼명은 HTML에 고정된 상태 그대로 간소하게 1줄로 유지됩니다.
         }
-
 
         /*************************************************************
          * [3] 집중 타이머 핵심 로직
@@ -2590,7 +2642,6 @@
             if (runView) runView.classList.add('hidden');
         }
 
-
         /*************************************************************
          * [4] 랜덤 뽑기 로직
          *************************************************************/
@@ -2605,6 +2656,7 @@
             renderStudentManageList();
             renderPickerGrid();
             initGroupPickGrid();
+            renderBulkGenderPanel();
         }
 
         function switchPickerSubmenu(viewId) {
@@ -2620,21 +2672,24 @@
             }
 
             document.querySelectorAll('.submenu-btn').forEach(btn => {
-                btn.className = "submenu-btn px-5 py-2.5 rounded-2xl text-sm font-extrabold text-zinc-400 hover:bg-zinc-800/80 hover:text-zinc-200 transition-all";
+                btn.className = "submenu-btn w-full text-left px-4 py-3 rounded-xl text-sm font-extrabold text-zinc-400 hover:bg-zinc-800 transition-all";
             });
 
             const activeBtn = document.getElementById('sub-' + viewId);
             if (activeBtn) {
                 if (viewId === 'picker-individual') {
-                    activeBtn.className = "submenu-btn px-5 py-2.5 rounded-2xl text-sm font-extrabold transition-all bg-blue-950/60 text-blue-400 border border-blue-900/40";
+                    activeBtn.className = "submenu-btn w-full text-left px-4 py-3 rounded-xl text-sm font-extrabold transition-all bg-blue-950/60 text-blue-400 border border-blue-900/40";
                 } else if (viewId === 'picker-group') {
-                    activeBtn.className = "submenu-btn px-5 py-2.5 rounded-2xl text-sm font-extrabold bg-indigo-950/60 text-indigo-400 border border-indigo-900/40 transition-all";
+                    activeBtn.className = "submenu-btn w-full text-left px-4 py-3 rounded-xl text-sm font-extrabold bg-indigo-950/60 text-indigo-400 border border-indigo-900/40 transition-all";
                 } else {
-                    activeBtn.className = "submenu-btn px-5 py-2.5 rounded-2xl text-sm font-extrabold bg-zinc-800 text-zinc-100 border border-zinc-700 transition-all";
+                    activeBtn.className = "submenu-btn w-full text-left px-4 py-3 rounded-xl text-sm font-extrabold bg-zinc-800 text-zinc-100 border border-zinc-700 transition-all flex items-center justify-between gap-2";
                 }
             }
 
             currentPickerSubmenu = viewId;
+            if (viewId === 'picker-manage') {
+                renderBulkGenderPanel();
+            }
         }
 
         function setQuickGender(g) {
@@ -2696,11 +2751,10 @@
 
             parsedNames.forEach((name, i) => {
                 if (!students.some(st => st.name === name)) {
-                    const gender = (i % 2 === 0) ? 'M' : 'F';
                     students.push({
                         id: 'st-bulk-' + Date.now() + '-' + i,
                         name: name,
-                        gender: gender
+                        gender: null
                     });
                     successCount++;
                 }
@@ -2709,6 +2763,42 @@
             area.value = '';
             updateStudentsState();
             showToast(`${successCount}명의 학생들이 명단에 일괄 등록되었습니다.`);
+        }
+
+        function setStudentGender(studentId, gender) {
+            const st = students.find(s => s.id === studentId);
+            if (!st) return;
+            st.gender = gender;
+            updateStudentsState();
+        }
+
+        function renderBulkGenderPanel() {
+            const panel = document.getElementById('bulk-gender-panel');
+            const list = document.getElementById('bulk-gender-list');
+            if (!panel || !list) return;
+
+            const pending = students.filter(st => st.gender !== 'M' && st.gender !== 'F');
+            if (pending.length === 0) {
+                panel.classList.add('hidden');
+                list.innerHTML = '';
+                return;
+            }
+
+            panel.classList.remove('hidden');
+            list.innerHTML = '';
+
+            pending.forEach(st => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between p-2.5 bg-zinc-900 rounded-lg border border-zinc-800';
+                row.innerHTML = `
+                    <span class="font-bold text-zinc-200 text-sm">${st.name}</span>
+                    <div class="flex gap-1.5">
+                        <button onclick="setStudentGender('${st.id}', 'M')" class="px-3 py-1 rounded-lg text-xs font-bold bg-zinc-800 hover:bg-blue-950 text-zinc-300 hover:text-blue-400 border border-zinc-700 hover:border-blue-900 transition-all">남</button>
+                        <button onclick="setStudentGender('${st.id}', 'F')" class="px-3 py-1 rounded-lg text-xs font-bold bg-zinc-800 hover:bg-pink-950 text-zinc-300 hover:text-pink-400 border border-zinc-700 hover:border-pink-900 transition-all">여</button>
+                    </div>
+                `;
+                list.appendChild(row);
+            });
         }
 
         function deleteStudent(id, name) {
@@ -2758,7 +2848,11 @@
                 const item = document.createElement('div');
                 item.className = "flex items-center justify-between p-2.5 bg-zinc-900 border border-zinc-800 rounded-xl text-xs hover:border-zinc-700 transition-colors";
                 
-                const genderLabel = st.gender === 'M' ? '<span class="text-blue-400 font-bold">남 ♂</span>' : '<span class="text-pink-400 font-bold">여 ♀</span>';
+                const genderLabel = st.gender === 'M'
+                    ? '<span class="text-blue-400 font-bold">남</span>'
+                    : st.gender === 'F'
+                    ? '<span class="text-pink-400 font-bold">여</span>'
+                    : '<span class="text-zinc-500 font-bold">미설정</span>';
                 
                 item.innerHTML = `
                     <div class="flex items-center gap-2">
@@ -2782,7 +2876,6 @@
             }
             return copy;
         }
-
 
         /*************************************************************
          * 4-1. 개인 랜덤 뽑기
@@ -2897,7 +2990,6 @@
             showToast('개인 당첨 목록이 깔끔하게 초기화되었습니다.');
         }
 
-
         /*************************************************************
          * 4-1-1. 다채로운 폭죽 효과 (Confetti) 공용 기구
          *************************************************************/
@@ -2937,7 +3029,6 @@
             }
         }
 
-
         /*************************************************************
          * 4-2. 모둠 랜덤 뽑기
          *************************************************************/
@@ -2960,6 +3051,10 @@
             const activeBtn = document.getElementById('btn-group-' + mode);
             if (activeBtn) {
                 activeBtn.className = "group-tool-btn py-3 rounded-xl text-xs font-black text-blue-400 bg-zinc-900 shadow-md transition-all";
+            }
+
+            if (mode === 'order') {
+                initGroupOrderDisplay();
             }
         }
 
@@ -3063,35 +3158,141 @@
             showToast('모둠 뽑기 상황판이 초기화되었습니다.');
         }
 
-        function generateGroupOrder() {
-            const limit = parseInt(document.getElementById('group-order-total').value);
-            let targetGroups = [];
-            for (let i = 1; i <= limit; i++) {
-                targetGroups.push(i);
-            }
-
-            const shuffled = shuffleArray(targetGroups);
+        function renderGroupOrderCards(numbers, shuffling) {
             const container = document.getElementById('group-order-results');
             if (!container) return;
             container.innerHTML = '';
 
-            shuffled.forEach((gNum, idx) => {
-                const row = document.createElement('div');
-                row.className = "flex items-center gap-4 bg-zinc-900 p-3.5 rounded-xl border border-zinc-800 shadow-sm animate-pop-in";
-                row.style.animationDelay = `${idx * 0.1}s`;
-
-                row.innerHTML = `
-                    <div class="w-8 h-8 rounded-full bg-indigo-950 text-indigo-400 border border-indigo-900/40 font-bold flex items-center justify-center text-sm">
-                        ${idx + 1}
-                    </div>
-                    <div class="text-sm font-bold text-zinc-100">
-                        ${gNum} 모둠 <span class="text-xs text-zinc-500 ml-1">번째 순서 확정</span>
-                    </div>
-                `;
-                container.appendChild(row);
+            numbers.forEach((num) => {
+                const card = document.createElement('div');
+                card.className = `w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 flex items-center justify-center rounded-2xl border-2 font-black text-5xl sm:text-6xl md:text-7xl shadow-lg select-none ${
+                    shuffling
+                    ? 'bg-indigo-900/60 border-indigo-500 text-indigo-200 animate-shuffle-shake'
+                    : 'bg-indigo-950 border-indigo-700 text-indigo-100'
+                }`;
+                card.innerText = num;
+                container.appendChild(card);
             });
+        }
 
-            showToast('전체 모둠 순서 배치가 완료되었습니다.');
+        function initGroupOrderDisplay() {
+            if (groupOrderIntervalId) {
+                clearInterval(groupOrderIntervalId);
+                groupOrderIntervalId = null;
+            }
+            const limit = parseInt(document.getElementById('group-order-total')?.value) || 4;
+            const ordered = Array.from({ length: limit }, (_, i) => i + 1);
+            renderGroupOrderCards(ordered, false);
+            const resetBtn = document.getElementById('btn-reset-group-order');
+            if (resetBtn) resetBtn.classList.add('hidden');
+        }
+
+        function generateGroupOrder() {
+            if (groupOrderIntervalId) return;
+            const limit = parseInt(document.getElementById('group-order-total')?.value) || 4;
+            const finalOrder = shuffleArray(Array.from({ length: limit }, (_, i) => i + 1));
+
+            let elapsed = 0;
+            groupOrderIntervalId = setInterval(() => {
+                const randomOrder = shuffleArray(Array.from({ length: limit }, (_, i) => i + 1));
+                renderGroupOrderCards(randomOrder, true);
+                elapsed += 80;
+                if (elapsed >= 1200) {
+                    clearInterval(groupOrderIntervalId);
+                    groupOrderIntervalId = null;
+                    renderGroupOrderCards(finalOrder, false);
+                    const resetBtn = document.getElementById('btn-reset-group-order');
+                    if (resetBtn) resetBtn.classList.remove('hidden');
+                }
+            }, 80);
+        }
+
+        function resetGroupOrder() {
+            initGroupOrderDisplay();
+        }
+
+        function computeAutomaticGroups(totalGroups, useGenderBalance) {
+            const groupContainers = Array.from({ length: totalGroups }, () => []);
+
+            if (useGenderBalance) {
+                const boys = shuffleArray(students.filter(st => st.gender === 'M'));
+                const girls = shuffleArray(students.filter(st => st.gender === 'F'));
+                const others = shuffleArray(students.filter(st => st.gender !== 'M' && st.gender !== 'F'));
+
+                let grpIdx = 0;
+                boys.forEach(boy => {
+                    groupContainers[grpIdx].push(boy);
+                    grpIdx = (grpIdx + 1) % totalGroups;
+                });
+
+                girls.forEach(girl => {
+                    groupContainers[grpIdx].push(girl);
+                    grpIdx = (grpIdx + 1) % totalGroups;
+                });
+
+                others.forEach(st => {
+                    groupContainers[grpIdx].push(st);
+                    grpIdx = (grpIdx + 1) % totalGroups;
+                });
+            } else {
+                const shuffledAll = shuffleArray(students);
+                shuffledAll.forEach((st, idx) => {
+                    const grpIdx = idx % totalGroups;
+                    groupContainers[grpIdx].push(st);
+                });
+            }
+
+            return groupContainers;
+        }
+
+        function buildGroupMakeCardHTML(members, gIdx, isShuffling, isFullscreen) {
+            const mCount = members.filter(m => m.gender === 'M').length;
+            const fCount = members.filter(m => m.gender === 'F').length;
+            const groupTitleClass = isFullscreen ? 'text-3xl sm:text-4xl font-black text-yellow-400' : 'text-lg font-black text-yellow-400';
+            const nameClass = isFullscreen
+                ? 'text-2xl sm:text-3xl font-black text-zinc-100'
+                : (isShuffling ? 'text-xl font-black text-zinc-200 animate-shuffle-shake' : 'text-xl font-black text-zinc-100');
+            const cardPadding = isFullscreen ? 'p-6' : 'p-4';
+            const gridCols = isFullscreen ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2';
+
+            return `
+                <div class="bg-zinc-900 ${cardPadding} rounded-2xl border border-zinc-800 shadow-sm space-y-3 ${isShuffling ? 'animate-shuffle-shake' : ''}">
+                    <div class="flex justify-between items-center border-b pb-2 border-zinc-800">
+                        <h5 class="${groupTitleClass}">${gIdx + 1} 모둠 <span class="text-sm text-zinc-500 font-bold">(${members.length}명)</span></h5>
+                        <div class="text-xs text-zinc-400 font-semibold">남 ${mCount} / 여 ${fCount}</div>
+                    </div>
+                    <div class="grid ${gridCols} gap-2">
+                        ${members.length === 0 ? '<p class="text-zinc-500 text-sm col-span-2 text-center py-2">-</p>' : members.map(member => {
+                            const genderText = member.gender === 'M' ? '남' : member.gender === 'F' ? '여' : '';
+                            const genderColor = member.gender === 'M' ? 'text-blue-400' : member.gender === 'F' ? 'text-pink-400' : 'text-zinc-500';
+                            return `
+                                <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 flex items-center justify-between">
+                                    <span class="${nameClass}">${member.name}</span>
+                                    ${genderText ? `<span class="${genderColor} text-sm font-bold">${genderText}</span>` : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderGroupMakeResults(groupContainers, isShuffling, isFullscreen) {
+            const resultsBox = isFullscreen
+                ? document.getElementById('group-make-fullscreen-content')
+                : document.getElementById('group-make-results-container');
+            if (!resultsBox) return;
+
+            if (!isFullscreen && groupContainers.length === 0) {
+                resultsBox.innerHTML = '<p class="text-zinc-500 text-center text-sm col-span-2 py-8">학생 명단을 바탕으로 새로운 모둠이 하단에 조립됩니다.</p>';
+                return;
+            }
+
+            const gridClass = isFullscreen
+                ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'
+                : 'grid grid-cols-1 sm:grid-cols-2 gap-4';
+
+            resultsBox.innerHTML = `<div class="${gridClass}">${groupContainers.map((members, gIdx) => buildGroupMakeCardHTML(members, gIdx, isShuffling, isFullscreen)).join('')}</div>`;
         }
 
         function buildAutomaticGroups() {
@@ -3108,66 +3309,107 @@
                 return;
             }
 
-            const groupContainers = Array.from({ length: totalGroups }, () => []);
-
-            if (useGenderBalance) {
-                const boys = shuffleArray(students.filter(st => st.gender === 'M'));
-                const girls = shuffleArray(students.filter(st => st.gender === 'F'));
-
-                let grpIdx = 0;
-                boys.forEach(boy => {
-                    groupContainers[grpIdx].push(boy);
-                    grpIdx = (grpIdx + 1) % totalGroups;
-                });
-
-                girls.forEach(girl => {
-                    groupContainers[grpIdx].push(girl);
-                    grpIdx = (grpIdx + 1) % totalGroups;
-                });
-            } else {
-                const shuffledAll = shuffleArray(students);
-                shuffledAll.forEach((st, idx) => {
-                    const grpIdx = idx % totalGroups;
-                    groupContainers[grpIdx].push(st);
-                });
+            if (groupMakeShuffleIntervalId) {
+                clearInterval(groupMakeShuffleIntervalId);
+                groupMakeShuffleIntervalId = null;
             }
 
-            const resultsBox = document.getElementById('group-make-results-container');
-            if (!resultsBox) return;
-            resultsBox.innerHTML = '';
+            const finalGroups = computeAutomaticGroups(totalGroups, useGenderBalance);
+            lastBuiltGroups = finalGroups;
 
-            groupContainers.forEach((members, gIdx) => {
-                const groupCard = document.createElement('div');
-                groupCard.className = "bg-zinc-900 p-4 rounded-2xl border border-zinc-800 shadow-sm space-y-3 animate-pop-in";
-                groupCard.style.animationDelay = `${gIdx * 0.08}s`;
+            const fullscreenBtn = document.getElementById('btn-group-make-fullscreen');
+            if (fullscreenBtn) fullscreenBtn.classList.add('hidden');
 
-                const mCount = members.filter(m => m.gender === 'M').length;
-                const fCount = members.filter(m => m.gender === 'F').length;
-
-                groupCard.innerHTML = `
-                    <div class="flex justify-between items-center border-b pb-2 border-zinc-800">
-                        <h5 class="font-extrabold text-sm text-yellow-400">${gIdx + 1} 모둠 <span class="text-xs text-zinc-500">(${members.length}명)</span></h5>
-                        <div class="text-[10px] text-zinc-400 font-semibold">남 ${mCount} / 여 ${fCount}</div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-1 text-xs">
-                        ${members.map(member => {
-                            const genderIcon = member.gender === 'M' ? '♂' : '♀';
-                            const genderColor = member.gender === 'M' ? 'text-blue-400' : 'text-pink-400';
-                            return `
-                                <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-2 flex items-center justify-between">
-                                    <span class="font-bold text-zinc-200">${member.name}</span>
-                                    <span class="${genderColor} text-[10px] font-bold">${genderIcon}</span>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                `;
-                resultsBox.appendChild(groupCard);
-            });
-
-            showToast('학급 전체 모둠 생성이 완료되었습니다!');
+            let elapsed = 0;
+            groupMakeShuffleIntervalId = setInterval(() => {
+                const randomGroups = Array.from({ length: totalGroups }, () => []);
+                const shuffledStudents = shuffleArray([...students]);
+                shuffledStudents.forEach((st, idx) => {
+                    randomGroups[idx % totalGroups].push(st);
+                });
+                renderGroupMakeResults(randomGroups, true, false);
+                elapsed += 100;
+                if (elapsed >= 1200) {
+                    clearInterval(groupMakeShuffleIntervalId);
+                    groupMakeShuffleIntervalId = null;
+                    renderGroupMakeResults(finalGroups, false, false);
+                    if (fullscreenBtn) fullscreenBtn.classList.remove('hidden');
+                }
+            }, 100);
         }
 
+        function openGroupMakeFullscreen() {
+            if (!lastBuiltGroups) return;
+            const modal = document.getElementById('group-make-fullscreen-modal');
+            if (!modal) return;
+            renderGroupMakeResults(lastBuiltGroups, false, true);
+            modal.classList.remove('hidden');
+        }
+
+        function closeGroupMakeFullscreen() {
+            const modal = document.getElementById('group-make-fullscreen-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function openEditorFullscreen(editorType) {
+            const modal = document.getElementById('editor-fullscreen-modal');
+            const container = document.getElementById('editor-fullscreen-content');
+            if (!modal || !container) return;
+
+            container.innerHTML = '';
+
+            if (editorType === 'notepad') {
+                const editor = document.getElementById('note-editor');
+                const canvas = document.getElementById('note-canvas');
+                const workspace = document.getElementById('notepad-workspace');
+
+                const outer = document.createElement('div');
+                outer.className = 'relative w-full max-w-6xl';
+                if (workspace && workspace.style.backgroundColor) {
+                    outer.style.backgroundColor = workspace.style.backgroundColor;
+                }
+
+                const scroller = document.createElement('div');
+                scroller.className = 'relative w-full';
+
+                const clone = document.createElement('div');
+                clone.className = editor.className.replace(/\bselect-text\b/g, '').trim();
+                clone.removeAttribute('contenteditable');
+                clone.removeAttribute('placeholder');
+                clone.style.cssText = editor.style.cssText;
+                clone.innerHTML = editor.innerHTML;
+
+                scroller.appendChild(clone);
+
+                if (canvas && canvas.width > 0 && canvas.height > 0) {
+                    const img = document.createElement('img');
+                    img.src = canvas.toDataURL();
+                    img.className = 'absolute top-0 left-0 w-full pointer-events-none';
+                    img.alt = '';
+                    scroller.appendChild(img);
+                }
+
+                outer.appendChild(scroller);
+                container.appendChild(outer);
+            } else {
+                const editor = document.getElementById('notice-editor');
+                const clone = document.createElement('div');
+                clone.className = editor.className.replace(/\bselect-text\b/g, '').trim();
+                clone.removeAttribute('contenteditable');
+                clone.removeAttribute('placeholder');
+                clone.style.cssText = editor.style.cssText;
+                clone.innerHTML = editor.innerHTML;
+                clone.classList.add('w-full', 'max-w-6xl');
+                container.appendChild(clone);
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeEditorFullscreen() {
+            const modal = document.getElementById('editor-fullscreen-modal');
+            if (modal) modal.classList.add('hidden');
+        }
 
         /*************************************************************
          * [5] 탭 전환 및 사이드바 토글 제어 공용 로직
@@ -3176,12 +3418,21 @@
             currentTabId = tabId;
             document.querySelectorAll('.tab-content').forEach(el => {
                 el.classList.add('hidden');
-                el.classList.remove('block');
+                el.classList.remove('block', 'flex');
             });
             const target = document.getElementById(tabId);
             if (target) {
                 target.classList.remove('hidden');
-                target.classList.add('block');
+                if (tabId === 'tab-notepad' || tabId === 'tab-notice') {
+                    target.classList.add('flex');
+                } else {
+                    target.classList.add('block');
+                }
+            }
+
+            const footer = document.querySelector('footer');
+            if (footer) {
+                footer.classList.toggle('hidden', tabId === 'tab-notepad' || tabId === 'tab-notice');
             }
 
             document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -3202,7 +3453,8 @@
             const allMenus = [
                 'font-dropdown-menu', 'size-dropdown-menu', 
                 'bg-dropdown-menu', 'lh-dropdown-menu', 
-                'notice-font-dropdown-menu', 'notice-size-dropdown-menu'
+                'notice-font-dropdown-menu', 'notice-size-dropdown-menu',
+                'notice-lh-dropdown-menu'
             ];
             allMenus.forEach(id => {
                 const el = document.getElementById(id);
@@ -3211,6 +3463,10 @@
 
             if (tabId === 'tab-notepad') {
                 setTimeout(resizeNotepadCanvas, 50);
+            }
+
+            if (tabId === 'tab-notice') {
+                initNoticeDate();
             }
         }
 
@@ -3247,42 +3503,12 @@
             }
         }
 
-
         /*************************************************************
          * [6] 전역 토스트 알림 메커니즘
          *************************************************************/
         function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-
-            const toast = document.createElement('div');
-            let bgClass = 'bg-zinc-900 border-zinc-700 text-zinc-100';
-            if (type === 'error') {
-                bgClass = 'bg-rose-950 border-rose-900 text-rose-200';
-            } else if (type === 'info') {
-                bgClass = 'bg-blue-950 border-blue-900 text-blue-200';
-            }
-
-            toast.className = `px-4 py-3 rounded-xl border shadow-2xl flex items-center gap-2 text-xs font-bold transition-all duration-300 transform translate-y-5 opacity-0 ${bgClass}`;
-            toast.innerHTML = `
-                <span>${type === 'error' ? '⚠️' : type === 'info' ? 'ℹ️' : '✨'}</span>
-                <span>${message}</span>
-            `;
-
-            container.appendChild(toast);
-
-            setTimeout(() => {
-                toast.classList.remove('translate-y-5', 'opacity-0');
-            }, 10);
-
-            setTimeout(() => {
-                toast.classList.add('translate-y-5', 'opacity-0');
-                setTimeout(() => {
-                    toast.remove();
-                }, 300);
-            }, 3000);
+            return;
         }
-
 
         /*************************************************************
          * [신규] 원격 백업 데이터 보존 및 패키지 가져오기 구현부
@@ -3361,7 +3587,6 @@
             e.target.value = '';
         }
 
-
         /*************************************************************
          * [7] 시스템 초기 로드 진입점
          *************************************************************/
@@ -3394,8 +3619,14 @@
 
                 // 기구 초기화
                 initNotepadCanvas();
+                document.addEventListener('keydown', handleNotepadCanvasKeydown);
                 initNoticeDate();
                 setupAutoSaveListeners();
+
+                const footer = document.querySelector('footer');
+                if (footer && (currentTabId === 'tab-notepad' || currentTabId === 'tab-notice')) {
+                    footer.classList.add('hidden');
+                }
 
                 // 기본 객체 선택
                 selectDefaultNote();
@@ -3430,7 +3661,8 @@
                     const dropdownContainers = [
                         'font-dropdown-container', 'size-dropdown-container', 
                         'bg-dropdown-container', 'lh-dropdown-container',
-                        'notice-font-dropdown-container', 'notice-size-dropdown-container'
+                        'notice-font-dropdown-container', 'notice-size-dropdown-container',
+                        'notice-lh-dropdown-container'
                     ];
                     
                     let clickedInside = false;
@@ -3480,5 +3712,6 @@
             }
         };
     </script>
+
 </body>
 </html>
